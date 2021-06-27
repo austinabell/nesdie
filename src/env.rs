@@ -1,4 +1,5 @@
 use crate::{sys, AccountId, Balance, Gas, PromiseResult, PublicKey};
+use alloc::vec::Vec;
 use core::mem::size_of;
 
 type PromiseIndex = u64;
@@ -11,7 +12,7 @@ const REGISTER_EXPECTED_ERR: &str =
 /// guest code is not parallel.
 const ATOMIC_OP_REGISTER: u64 = 0;
 /// Register used to record evicted values from the storage.
-const EVICTED_REGISTER: u64 = std::u64::MAX - 1;
+const EVICTED_REGISTER: u64 = core::u64::MAX - 1;
 
 /// Key used to store the state of the contract.
 const STATE_KEY: &[u8] = b"STATE";
@@ -31,19 +32,15 @@ macro_rules! method_into_register {
     }};
 }
 
-/// Implements panic hook that converts `PanicInfo` into a string and provides it through the
-/// blockchain interface.
-fn panic_hook_impl(info: &std::panic::PanicInfo) {
+// Update panic handler in wasm32 environments
+#[cfg(all(not(feature = "std"), target_arch = "wasm32"))]
+#[panic_handler]
+fn panic(info: &core::panic::PanicInfo) -> ! {
     if let Some(s) = info.payload().downcast_ref::<&str>() {
-        panic(s);
+        panic_str(s);
     } else {
-        panic("unexpected panic occurred");
+        panic_str("unexpected panic occurred");
     }
-}
-
-/// Setups panic hook to expose error info to the blockchain.
-pub fn setup_panic_hook() {
-    std::panic::set_hook(Box::new(panic_hook_impl));
 }
 
 /// Reads the content of the `register_id`. If register is not used returns `None`.
@@ -57,7 +54,7 @@ pub fn read_register(register_id: u64) -> Option<Vec<u8>> {
 /// Returns the size of the register. If register is not used returns `None`.
 pub fn register_len(register_id: u64) -> Option<u64> {
     let len = unsafe { sys::register_len(register_id) };
-    if len == std::u64::MAX {
+    if len == core::u64::MAX {
         None
     } else {
         Some(len)
@@ -423,13 +420,13 @@ pub fn value_return(value: &[u8]) {
     unsafe { sys::value_return(value.len() as _, value.as_ptr() as _) }
 }
 /// Terminates the execution of the program with the UTF-8 encoded message.
-pub fn panic(message: &str) -> ! {
+pub fn panic_str(message: &str) -> ! {
     unsafe { sys::panic_utf8(message.len() as _, message.as_ptr() as _) }
     unreachable!()
 }
 /// Log the UTF-8 encodable message.
 pub fn log_str(message: &str) {
-    #[cfg(all(debug_assertions, not(target_arch = "wasm32")))]
+    #[cfg(all(debug_assertions, feature = "std", not(target_arch = "wasm32")))]
     eprintln!("{}", message);
     unsafe { sys::log_utf8(message.len() as _, message.as_ptr() as _) }
 }

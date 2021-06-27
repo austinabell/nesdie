@@ -1,3 +1,6 @@
+use alloc::boxed::Box;
+use alloc::vec::Vec;
+
 /// Token denomination type.
 pub type Balance = u128;
 
