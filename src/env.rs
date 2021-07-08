@@ -33,7 +33,7 @@ macro_rules! method_into_register {
 }
 
 // Update panic handler in wasm32 environments
-#[cfg(all(not(feature = "std"), target_arch = "wasm32"))]
+#[cfg(target_arch = "wasm32")]
 #[panic_handler]
 fn panic(info: &core::panic::PanicInfo) -> ! {
     if let Some(s) = info.payload().downcast_ref::<&str>() {
@@ -426,7 +426,7 @@ pub fn panic_str(message: &str) -> ! {
 }
 /// Log the UTF-8 encodable message.
 pub fn log_str(message: &str) {
-    #[cfg(all(debug_assertions, feature = "std", not(target_arch = "wasm32")))]
+    #[cfg(all(debug_assertions, target_arch = "wasm32-unknown-unknown", not(target_arch = "wasm32")))]
     eprintln!("{}", message);
     unsafe { sys::log_utf8(message.len() as _, message.as_ptr() as _) }
 }
