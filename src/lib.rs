@@ -1,5 +1,5 @@
 #![cfg_attr(target_arch = "wasm32", no_std)]
-#![cfg_attr(target_arch = "wasm32", feature(alloc_error_handler, core_intrinsics))]
+#![cfg_attr(target_arch = "wasm32", feature(alloc_error_handler))]
 
 #[macro_use]
 extern crate alloc;
@@ -18,5 +18,5 @@ static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 #[cfg(target_arch = "wasm32")]
 #[alloc_error_handler]
 fn oom(_: core::alloc::Layout) -> ! {
-    core::intrinsics::abort()
+    unsafe { core::arch::wasm32::unreachable() }
 }
