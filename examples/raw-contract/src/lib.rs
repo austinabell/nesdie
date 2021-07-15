@@ -5,6 +5,6 @@ use nesdie::env;
 
 #[cfg(target_arch = "wasm32")]
 #[no_mangle]
-pub extern "C" fn test_function() {
+pub fn test_function() {
     env::log_str("test call");
 }
