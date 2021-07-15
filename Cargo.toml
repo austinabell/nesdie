@@ -8,6 +8,7 @@ wee_alloc = { version = "0.4.5", default-features = false, optional = true }
 
 [features]
 default = ["wee_alloc"]
+panic_message = []
 
 [profile.release]
 panic = "abort"
