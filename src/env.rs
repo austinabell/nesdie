@@ -11,22 +11,6 @@ const EVICTED_REGISTER: u64 = core::u64::MAX - 1;
 /// Key used to store the state of the contract.
 const STATE_KEY: &[u8] = b"STATE";
 
-// Update panic handler in wasm32 environments
-#[cfg(target_arch = "wasm32")]
-#[panic_handler]
-#[allow(unused_variables)]
-fn panic(info: &core::panic::PanicInfo) -> ! {
-    if cfg!(feature = "panic_message") {
-        if let Some(s) = info.payload().downcast_ref::<&str>() {
-            panic_str(s);
-        } else {
-            panic_str("unexpected panic occurred");
-        }
-    } else {
-        unsafe { core::arch::wasm32::unreachable() }
-    }
-}
-
 /// Reads the content of the `register_id`. If register is not used or the buffer is not large
 /// enough, an error will be returned.
 pub fn read_register(register_id: u64, buf: &mut [u8]) -> Result<usize, ()> {

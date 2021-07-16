@@ -17,3 +17,19 @@ static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 fn oom(_: core::alloc::Layout) -> ! {
     unsafe { core::arch::wasm32::unreachable() }
 }
+
+// Update panic handler in wasm32 environments
+#[cfg(target_arch = "wasm32")]
+#[panic_handler]
+#[allow(unused_variables)]
+fn panic(info: &core::panic::PanicInfo) -> ! {
+    if cfg!(feature = "panic_message") {
+        if let Some(s) = info.payload().downcast_ref::<&str>() {
+            env::panic_str(s);
+        } else {
+            env::panic_str("unexpected panic occurred");
+        }
+    } else {
+        unsafe { core::arch::wasm32::unreachable() }
+    }
+}
