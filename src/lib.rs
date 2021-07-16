@@ -1,14 +1,11 @@
 #![cfg_attr(target_arch = "wasm32", no_std)]
 #![cfg_attr(target_arch = "wasm32", feature(alloc_error_handler))]
 
-#[macro_use]
-extern crate alloc;
-
 pub mod env;
 pub mod sys;
 
 mod types;
-pub use self::types::{AccountId, Balance, Gas, PromiseResult, PublicKey};
+pub use self::types::{Balance, Gas};
 
 // Set up global allocator by default if wee_alloc feature is enabled and in wasm32 architecture.
 #[cfg(all(feature = "wee_alloc", target_arch = "wasm32"))]

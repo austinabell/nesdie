@@ -1,11 +1,5 @@
-use crate::{sys, AccountId, Balance, Gas, PromiseResult, PublicKey};
-use alloc::vec::Vec;
+use crate::{sys, Balance, Gas};
 use core::mem::size_of;
-
-type PromiseIndex = u64;
-
-const REGISTER_EXPECTED_ERR: &str =
-    "Register was expected to have data because we just wrote it into it.";
 
 /// Register used internally for atomic operations. This register is safe to use by the user,
 /// since it only needs to be untouched while methods of `Environment` execute, which is guaranteed
@@ -16,21 +10,6 @@ const EVICTED_REGISTER: u64 = core::u64::MAX - 1;
 
 /// Key used to store the state of the contract.
 const STATE_KEY: &[u8] = b"STATE";
-
-/// A simple macro helper to read blob value coming from host's method.
-macro_rules! try_method_into_register {
-    ( $method:ident ) => {{
-        unsafe { sys::$method(ATOMIC_OP_REGISTER) };
-        read_register(ATOMIC_OP_REGISTER)
-    }};
-}
-
-/// Same as `try_method_into_register` but expects the data.
-macro_rules! method_into_register {
-    ( $method:ident ) => {{
-        try_method_into_register!($method).expect(REGISTER_EXPECTED_ERR)
-    }};
-}
 
 // Update panic handler in wasm32 environments
 #[cfg(target_arch = "wasm32")]
@@ -48,12 +27,15 @@ fn panic(info: &core::panic::PanicInfo) -> ! {
     }
 }
 
-/// Reads the content of the `register_id`. If register is not used returns `None`.
-pub fn read_register(register_id: u64) -> Option<Vec<u8>> {
-    let len = register_len(register_id)?;
-    let res = vec![0u8; len as usize];
-    unsafe { sys::read_register(register_id, res.as_ptr() as _) };
-    Some(res)
+/// Reads the content of the `register_id`. If register is not used or the buffer is not large
+/// enough, an error will be returned.
+pub fn read_register(register_id: u64, buf: &mut [u8]) -> Result<usize, ()> {
+    let len = register_len(register_id).ok_or(())? as usize;
+    if buf.len() < len {
+        return Err(());
+    }
+    unsafe { sys::read_register(register_id, buf.as_ptr() as _) };
+    Ok(len)
 }
 
 /// Returns the size of the register. If register is not used returns `None`.
@@ -69,32 +51,6 @@ pub fn register_len(register_id: u64) -> Option<u64> {
 // ###############
 // # Context API #
 // ###############
-/// The id of the account that owns the current contract.
-pub fn current_account_id() -> AccountId {
-    method_into_register!(current_account_id).into_boxed_slice()
-}
-
-/// The id of the account that either signed the original transaction or issued the initial
-/// cross-contract call.
-pub fn signer_account_id() -> AccountId {
-    method_into_register!(signer_account_id).into_boxed_slice()
-}
-
-/// The public key of the account that did the signing.
-pub fn signer_account_pk() -> PublicKey {
-    method_into_register!(signer_account_pk).into_boxed_slice()
-}
-
-/// The id of the account that was the previous contract in the chain of cross-contract calls.
-/// If this is the first contract, it is equal to `signer_account_id`.
-pub fn predecessor_account_id() -> AccountId {
-    method_into_register!(predecessor_account_id).into_boxed_slice()
-}
-
-/// The input to the contract call serialized as bytes. If input is not provided returns `None`.
-pub fn input() -> Option<Vec<u8>> {
-    try_method_into_register!(input)
-}
 
 /// Current block index.
 pub fn block_index() -> u64 {
@@ -155,242 +111,36 @@ pub fn used_gas() -> Gas {
 // ############
 // # Math API #
 // ############
-/// Get random seed from the register.
-pub fn random_seed() -> Vec<u8> {
-    method_into_register!(random_seed)
-}
+// /// Get random seed from the register.
+// pub fn random_seed() -> Vec<u8> {
+//     method_into_register!(random_seed)
+// }
 
 /// Hashes the random sequence of bytes using sha256.
-pub fn sha256(value: &[u8]) -> Vec<u8> {
+pub fn sha256(value: &[u8]) -> [u8; 32] {
     unsafe { sys::sha256(value.len() as _, value.as_ptr() as _, ATOMIC_OP_REGISTER) };
-    read_register(ATOMIC_OP_REGISTER).expect(REGISTER_EXPECTED_ERR)
+    let mut hash = [0u8; 32];
+
+    read_register(ATOMIC_OP_REGISTER, &mut hash).unwrap_or_else(|_| unreachable!());
+    hash
 }
 
 /// Hashes the random sequence of bytes using keccak256.
-pub fn keccak256(value: &[u8]) -> Vec<u8> {
+pub fn keccak256(value: &[u8]) -> [u8; 32] {
     unsafe { sys::keccak256(value.len() as _, value.as_ptr() as _, ATOMIC_OP_REGISTER) };
-    read_register(ATOMIC_OP_REGISTER).expect(REGISTER_EXPECTED_ERR)
+    let mut hash = [0u8; 32];
+
+    read_register(ATOMIC_OP_REGISTER, &mut hash).unwrap_or_else(|_| unreachable!());
+    hash
 }
 
 /// Hashes the random sequence of bytes using keccak512.
-pub fn keccak512(value: &[u8]) -> Vec<u8> {
+pub fn keccak512(value: &[u8]) -> [u8; 64] {
     unsafe { sys::keccak512(value.len() as _, value.as_ptr() as _, ATOMIC_OP_REGISTER) };
-    read_register(ATOMIC_OP_REGISTER).expect(REGISTER_EXPECTED_ERR)
-}
+    let mut hash = [0u8; 64];
 
-// ################
-// # Promises API #
-// ################
-/// Creates a promise that will execute a method on account with given arguments and attaches
-/// the given amount and gas.
-pub fn promise_create(
-    account_id: AccountId,
-    method_name: &[u8],
-    arguments: &[u8],
-    amount: Balance,
-    gas: Gas,
-) -> PromiseIndex {
-    let account_id = account_id.as_ref();
-    unsafe {
-        sys::promise_create(
-            account_id.len() as _,
-            account_id.as_ptr() as _,
-            method_name.len() as _,
-            method_name.as_ptr() as _,
-            arguments.len() as _,
-            arguments.as_ptr() as _,
-            &amount as *const Balance as _,
-            gas,
-        )
-    }
-}
-
-/// Attaches the callback that is executed after promise pointed by `promise_idx` is complete.
-pub fn promise_then(
-    promise_idx: PromiseIndex,
-    account_id: AccountId,
-    method_name: &[u8],
-    arguments: &[u8],
-    amount: Balance,
-    gas: Gas,
-) -> PromiseIndex {
-    let account_id = account_id.as_ref();
-    unsafe {
-        sys::promise_then(
-            promise_idx,
-            account_id.len() as _,
-            account_id.as_ptr() as _,
-            method_name.len() as _,
-            method_name.as_ptr() as _,
-            arguments.len() as _,
-            arguments.as_ptr() as _,
-            &amount as *const Balance as _,
-            gas,
-        )
-    }
-}
-
-/// Creates a new promise which completes when time all promises passed as arguments complete.
-pub fn promise_and(promise_indices: &[PromiseIndex]) -> PromiseIndex {
-    let mut data = vec![0u8; promise_indices.len() * size_of::<PromiseIndex>()];
-    for i in 0..promise_indices.len() {
-        data[i * size_of::<PromiseIndex>()..(i + 1) * size_of::<PromiseIndex>()]
-            .copy_from_slice(&promise_indices[i].to_le_bytes());
-    }
-    unsafe { sys::promise_and(data.as_ptr() as _, promise_indices.len() as _) }
-}
-
-pub fn promise_batch_create(account_id: &AccountId) -> PromiseIndex {
-    unsafe { sys::promise_batch_create(account_id.len() as _, account_id.as_ptr() as _) }
-}
-
-pub fn promise_batch_then(promise_index: PromiseIndex, account_id: &AccountId) -> PromiseIndex {
-    unsafe {
-        sys::promise_batch_then(
-            promise_index,
-            account_id.len() as _,
-            account_id.as_ptr() as _,
-        )
-    }
-}
-
-pub fn promise_batch_action_create_account(promise_index: PromiseIndex) {
-    unsafe { sys::promise_batch_action_create_account(promise_index) }
-}
-
-pub fn promise_batch_action_deploy_contract(promise_index: u64, code: &[u8]) {
-    unsafe {
-        sys::promise_batch_action_deploy_contract(
-            promise_index,
-            code.len() as _,
-            code.as_ptr() as _,
-        )
-    }
-}
-
-pub fn promise_batch_action_function_call(
-    promise_index: PromiseIndex,
-    method_name: &[u8],
-    arguments: &[u8],
-    amount: Balance,
-    gas: Gas,
-) {
-    unsafe {
-        sys::promise_batch_action_function_call(
-            promise_index,
-            method_name.len() as _,
-            method_name.as_ptr() as _,
-            arguments.len() as _,
-            arguments.as_ptr() as _,
-            &amount as *const Balance as _,
-            gas,
-        )
-    }
-}
-
-pub fn promise_batch_action_transfer(promise_index: PromiseIndex, amount: Balance) {
-    unsafe { sys::promise_batch_action_transfer(promise_index, &amount as *const Balance as _) }
-}
-
-pub fn promise_batch_action_stake(
-    promise_index: PromiseIndex,
-    amount: Balance,
-    public_key: &PublicKey,
-) {
-    unsafe {
-        sys::promise_batch_action_stake(
-            promise_index,
-            &amount as *const Balance as _,
-            public_key.len() as _,
-            public_key.as_ptr() as _,
-        )
-    }
-}
-pub fn promise_batch_action_add_key_with_full_access(
-    promise_index: PromiseIndex,
-    public_key: PublicKey,
-    nonce: u64,
-) {
-    unsafe {
-        sys::promise_batch_action_add_key_with_full_access(
-            promise_index,
-            public_key.len() as _,
-            public_key.as_ptr() as _,
-            nonce,
-        )
-    }
-}
-pub fn promise_batch_action_add_key_with_function_call(
-    promise_index: PromiseIndex,
-    public_key: &PublicKey,
-    nonce: u64,
-    allowance: Balance,
-    receiver_id: &AccountId,
-    method_names: &[u8],
-) {
-    unsafe {
-        sys::promise_batch_action_add_key_with_function_call(
-            promise_index,
-            public_key.len() as _,
-            public_key.as_ptr() as _,
-            nonce,
-            &allowance as *const Balance as _,
-            receiver_id.len() as _,
-            receiver_id.as_ptr() as _,
-            method_names.len() as _,
-            method_names.as_ptr() as _,
-        )
-    }
-}
-pub fn promise_batch_action_delete_key(promise_index: PromiseIndex, public_key: &PublicKey) {
-    unsafe {
-        sys::promise_batch_action_delete_key(
-            promise_index,
-            public_key.len() as _,
-            public_key.as_ptr() as _,
-        )
-    }
-}
-
-pub fn promise_batch_action_delete_account(
-    promise_index: PromiseIndex,
-    beneficiary_id: &AccountId,
-) {
-    unsafe {
-        sys::promise_batch_action_delete_account(
-            promise_index,
-            beneficiary_id.len() as _,
-            beneficiary_id.as_ptr() as _,
-        )
-    }
-}
-
-/// If the current function is invoked by a callback we can access the execution results of the
-/// promises that caused the callback. This function returns the number of complete and
-/// incomplete callbacks.
-pub fn promise_results_count() -> u64 {
-    unsafe { sys::promise_results_count() }
-}
-
-/// If the current function is invoked by a callback we can access the execution results of the
-/// promises that caused the callback.
-pub fn promise_result(result_idx: u64) -> PromiseResult {
-    match unsafe { sys::promise_result(result_idx, ATOMIC_OP_REGISTER) } {
-        0 => PromiseResult::NotReady,
-        1 => {
-            let data = read_register(ATOMIC_OP_REGISTER)
-                .expect("Promise result should've returned into register.");
-            PromiseResult::Successful(data)
-        }
-        2 => PromiseResult::Failed,
-        _ => unreachable!(),
-    }
-}
-
-/// Consider the execution result of promise under `promise_idx` as execution result of this
-/// function.
-pub fn promise_return(promise_idx: PromiseIndex) {
-    unsafe { sys::promise_return(promise_idx) }
+    read_register(ATOMIC_OP_REGISTER, &mut hash).unwrap_or_else(|_| unreachable!());
+    hash
 }
 
 // ###############
@@ -398,7 +148,7 @@ pub fn promise_return(promise_idx: PromiseIndex) {
 // ###############
 
 /// For a given account return its current stake. If the account is not a validator, returns 0.
-pub fn validator_stake(account_id: &AccountId) -> Balance {
+pub fn validator_stake(account_id: &str) -> Balance {
     let data = [0u8; size_of::<Balance>()];
     unsafe {
         sys::validator_stake(
@@ -461,10 +211,10 @@ pub fn storage_write(key: &[u8], value: &[u8]) -> bool {
     }
 }
 /// Reads the value stored under the given key.
-pub fn storage_read(key: &[u8]) -> Option<Vec<u8>> {
+pub fn storage_read(key: &[u8], buf: &mut [u8]) -> Option<usize> {
     match unsafe { sys::storage_read(key.len() as _, key.as_ptr() as _, ATOMIC_OP_REGISTER) } {
         0 => None,
-        1 => Some(read_register(ATOMIC_OP_REGISTER).expect(REGISTER_EXPECTED_ERR)),
+        1 => Some(read_register(ATOMIC_OP_REGISTER, buf).unwrap_or_else(|_| unreachable!())),
         _ => unreachable!(),
     }
 }
@@ -478,8 +228,8 @@ pub fn storage_remove(key: &[u8]) -> bool {
     }
 }
 /// Reads the most recent value that was evicted with `storage_write` or `storage_remove` command.
-pub fn storage_get_evicted() -> Option<Vec<u8>> {
-    read_register(EVICTED_REGISTER)
+pub fn storage_get_evicted(buf: &mut [u8]) -> Option<usize> {
+    read_register(EVICTED_REGISTER, buf).ok()
 }
 /// Checks if there is a key-value in the storage.
 pub fn storage_has_key(key: &[u8]) -> bool {
@@ -495,8 +245,8 @@ pub fn storage_has_key(key: &[u8]) -> bool {
 // ############################################
 /// Load the state of the given object.
 /// Read raw bytes under the static state key.
-pub fn state_read_raw() -> Option<Vec<u8>> {
-    storage_read(STATE_KEY)
+pub fn state_read_raw(buf: &mut [u8]) -> Option<usize> {
+    storage_read(STATE_KEY, buf)
 }
 
 /// Write bytes under the static state key.
