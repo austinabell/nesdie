@@ -13,6 +13,7 @@ const STATE_KEY: &[u8] = b"STATE";
 
 /// Reads the content of the `register_id`. If register is not used or the buffer is not large
 /// enough, an error will be returned.
+#[allow(clippy::result_unit_err)]
 pub fn read_register(register_id: u64, buf: &mut [u8]) -> Result<usize, ()> {
     let len = register_len(register_id).ok_or(())? as usize;
     if buf.len() < len {
@@ -231,7 +232,7 @@ pub fn state_read_raw(buf: &mut [u8]) -> Option<usize> {
 
 /// Write bytes under the static state key.
 pub fn state_write_raw(data: &[u8]) {
-    storage_write(STATE_KEY, &data);
+    storage_write(STATE_KEY, data);
 }
 
 /// Returns `true` if the contract state exists and `false` otherwise.

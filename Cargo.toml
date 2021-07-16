@@ -1,6 +1,10 @@
 [package]
 name = "nesdie"
 version = "0.1.0"
+authors = ["Austin Abell <austinabell8@gmail.com>"]
+license = "MIT OR Apache-2.0"
+description = "no_std SDK for NEAR protocol"
+repository = "https://github.com/austinabell/nesdie"
 edition = "2018"
 
 [dependencies]
