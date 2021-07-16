@@ -23,7 +23,7 @@ fn oom(_: core::alloc::Layout) -> ! {
 #[panic_handler]
 #[allow(unused_variables)]
 fn panic(info: &core::panic::PanicInfo) -> ! {
-    if cfg!(feature = "panic_message") {
+    if cfg!(feature = "panic-message") {
         if let Some(s) = info.payload().downcast_ref::<&str>() {
             env::panic_str(s);
         } else {
