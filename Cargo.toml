@@ -5,6 +5,7 @@ authors = ["Austin Abell <austinabell8@gmail.com>"]
 license = "MIT OR Apache-2.0"
 description = "no_std SDK for NEAR protocol"
 repository = "https://github.com/austinabell/nesdie"
+exclude = ["/examples/**", "/.vscode", "/.github"]
 edition = "2018"
 
 [dependencies]
