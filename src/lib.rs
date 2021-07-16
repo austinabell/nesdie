@@ -1,7 +1,18 @@
+//! `nesdie` is an experimental `no_std` SDK for NEAR Protocol which optimizes for small compiled
+//! WASM code size.
+//!
+//! This SDK is setup like a domain-specific language and configures all low level boilerplate
+//! of the contract by default.
+
 #![cfg_attr(target_arch = "wasm32", no_std)]
 #![cfg_attr(target_arch = "wasm32", feature(alloc_error_handler))]
+#![cfg_attr(doc_cfg, feature(doc_cfg))]
+#![deny(dead_code, unused_imports, unused_mut)]
+#![warn(missing_docs)]
 
+/// Higher level environment functions which act as a safe wrapper around [`sys`].
 pub mod env;
+/// Host functions available to a NEAR contract through the runtime the contract is running inside.
 pub mod sys;
 
 mod types;
