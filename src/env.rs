@@ -165,11 +165,7 @@ pub fn panic_str(message: &str) -> ! {
 }
 /// Log the UTF-8 encodable message.
 pub fn log_str(message: &str) {
-    #[cfg(all(
-        debug_assertions,
-        target_arch = "wasm32-unknown-unknown",
-        not(target_arch = "wasm32")
-    ))]
+    #[cfg(all(debug_assertions, not(target_arch = "wasm32")))]
     eprintln!("{}", message);
     unsafe { sys::log_utf8(message.len() as _, message.as_ptr() as _) }
 }
