@@ -11,6 +11,10 @@ const EVICTED_REGISTER: u64 = core::u64::MAX - 1;
 /// Key used to store the state of the contract.
 const STATE_KEY: &[u8] = b"STATE";
 
+fn sys_panic() -> ! {
+    unsafe { sys::panic() }
+}
+
 /// Reads the content of the `register_id`. If register is not used or the buffer is not large
 /// enough, an error will be returned.
 #[allow(clippy::result_unit_err)]
@@ -106,7 +110,7 @@ pub fn sha256(value: &[u8]) -> [u8; 32] {
     unsafe { sys::sha256(value.len() as _, value.as_ptr() as _, ATOMIC_OP_REGISTER) };
     let mut hash = [0u8; 32];
 
-    read_register(ATOMIC_OP_REGISTER, &mut hash).unwrap_or_else(|_| unreachable!());
+    read_register(ATOMIC_OP_REGISTER, &mut hash).unwrap_or_else(|_| sys_panic());
     hash
 }
 
@@ -115,7 +119,7 @@ pub fn keccak256(value: &[u8]) -> [u8; 32] {
     unsafe { sys::keccak256(value.len() as _, value.as_ptr() as _, ATOMIC_OP_REGISTER) };
     let mut hash = [0u8; 32];
 
-    read_register(ATOMIC_OP_REGISTER, &mut hash).unwrap_or_else(|_| unreachable!());
+    read_register(ATOMIC_OP_REGISTER, &mut hash).unwrap_or_else(|_| sys_panic());
     hash
 }
 
@@ -124,7 +128,7 @@ pub fn keccak512(value: &[u8]) -> [u8; 64] {
     unsafe { sys::keccak512(value.len() as _, value.as_ptr() as _, ATOMIC_OP_REGISTER) };
     let mut hash = [0u8; 64];
 
-    read_register(ATOMIC_OP_REGISTER, &mut hash).unwrap_or_else(|_| unreachable!());
+    read_register(ATOMIC_OP_REGISTER, &mut hash).unwrap_or_else(|_| sys_panic());
     hash
 }
 
@@ -159,10 +163,10 @@ pub fn validator_total_stake() -> Balance {
 pub fn value_return(value: &[u8]) {
     unsafe { sys::value_return(value.len() as _, value.as_ptr() as _) }
 }
+
 /// Terminates the execution of the program with the UTF-8 encoded message.
 pub fn panic_str(message: &str) -> ! {
     unsafe { sys::panic_utf8(message.len() as _, message.as_ptr() as _) }
-    unreachable!()
 }
 /// Log the UTF-8 encodable message.
 pub fn log_str(message: &str) {
@@ -188,15 +192,15 @@ pub fn storage_write(key: &[u8], value: &[u8]) -> bool {
     } {
         0 => false,
         1 => true,
-        _ => unreachable!(),
+        _ => sys_panic(),
     }
 }
 /// Reads the value stored under the given key.
 pub fn storage_read(key: &[u8], buf: &mut [u8]) -> Option<usize> {
     match unsafe { sys::storage_read(key.len() as _, key.as_ptr() as _, ATOMIC_OP_REGISTER) } {
         0 => None,
-        1 => Some(read_register(ATOMIC_OP_REGISTER, buf).unwrap_or_else(|_| unreachable!())),
-        _ => unreachable!(),
+        1 => Some(read_register(ATOMIC_OP_REGISTER, buf).unwrap_or_else(|_| sys_panic())),
+        _ => sys_panic(),
     }
 }
 /// Removes the value stored under the given key.
@@ -205,7 +209,7 @@ pub fn storage_remove(key: &[u8]) -> bool {
     match unsafe { sys::storage_remove(key.len() as _, key.as_ptr() as _, EVICTED_REGISTER) } {
         0 => false,
         1 => true,
-        _ => unreachable!(),
+        _ => sys_panic(),
     }
 }
 /// Reads the most recent value that was evicted with `storage_write` or `storage_remove` command.
@@ -217,7 +221,7 @@ pub fn storage_has_key(key: &[u8]) -> bool {
     match unsafe { sys::storage_has_key(key.len() as _, key.as_ptr() as _) } {
         0 => false,
         1 => true,
-        _ => unreachable!(),
+        _ => sys_panic(),
     }
 }
 
