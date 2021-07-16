@@ -6,6 +6,7 @@ This is just meant as an experimental `no_std` SDK which will follow similar pat
 
 - `wee_alloc` (default): Configures the global allocator by default with [`wee_alloc`](https://github.com/rustwasm/wee_alloc)
 - `panic-message`: Configures `panic_handler` to include error details, which will show up on chain. Disabled by default to optimize code size
+- `oom-handler`: Configures `alloc_error_handler` to minimize error handling in this case. This feature does not currently work with a `stable` toolchain
 
 ### Goals for `nesdie`:
 

@@ -5,7 +5,7 @@
 //! of the contract by default.
 
 #![cfg_attr(target_arch = "wasm32", no_std)]
-#![cfg_attr(target_arch = "wasm32", feature(alloc_error_handler))]
+#![cfg_attr(all(target_arch = "wasm32", feature = "oom-handler"), feature(alloc_error_handler))]
 #![cfg_attr(doc_cfg, feature(doc_cfg))]
 #![deny(dead_code, unused_imports, unused_mut)]
 #![warn(missing_docs)]
@@ -23,7 +23,7 @@ pub use self::types::{Balance, Gas};
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
-#[cfg(target_arch = "wasm32")]
+#[cfg(all(feature = "oom-handler", target_arch = "wasm32"))]
 #[alloc_error_handler]
 fn oom(_: core::alloc::Layout) -> ! {
     unsafe { core::arch::wasm32::unreachable() }
