@@ -1,0 +1,8 @@
+[package]
+name = "nesdie-collections"
+version = "0.1.0"
+edition = "2018"
+
+[dependencies]
+nesdie = { version = "0.1", path = "../" }
+borsh = { version = "0.9", default-features = false }

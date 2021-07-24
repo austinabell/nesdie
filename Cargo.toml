@@ -19,3 +19,7 @@ oom-handler = []
 [profile.release]
 panic = "abort"
 lto = true
+
+[workspace]
+members = ["collections"]
+exclude = ["examples/"]

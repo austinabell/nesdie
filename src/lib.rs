@@ -7,7 +7,7 @@
 #![cfg_attr(target_arch = "wasm32", no_std)]
 #![cfg_attr(all(target_arch = "wasm32", feature = "oom-handler"), feature(alloc_error_handler))]
 #![cfg_attr(doc_cfg, feature(doc_cfg))]
-#![deny(dead_code, unused_imports, unused_mut)]
+#![deny(dead_code, unused_mut)]
 #![warn(missing_docs)]
 
 /// Higher level environment functions which act as a safe wrapper around [`sys`].
