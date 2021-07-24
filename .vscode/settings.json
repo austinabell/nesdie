@@ -1,4 +1,4 @@
 {
-	"rust-analyzer.cargo.features": ["wee_alloc"],
-	"rust-analyzer.cargo.allFeatures": false
+	// "rust-analyzer.cargo.features": ["wee_alloc"],
+	// "rust-analyzer.cargo.allFeatures": false
 }

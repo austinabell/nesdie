@@ -5,3 +5,5 @@ pub mod vec;
 
 pub use vec::Vector;
 
+#[cfg(feature = "legacy")]
+pub mod legacy_unordered_map;
