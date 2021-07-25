@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use super::types::*;
 use super::{public_key::PublicKey, types::AccountId};
 use crate::alloc::boxed::Box;

@@ -197,7 +197,7 @@ where
                 .map(|bytes| Self::deserialize_element(&bytes));
             CacheEntry::new_cached(value)
         });
-        let entry = entry.get_mut().unwrap();
+        let entry = entry.get_mut().unwrap_or_else(|| unreachable!());
         Some(entry)
     }
 
@@ -217,9 +217,9 @@ where
             return;
         }
 
-        let val_a = self.get_mut_inner(a).unwrap().replace(None);
-        let val_b = self.get_mut_inner(b).unwrap().replace(val_a);
-        self.get_mut_inner(a).unwrap().replace(val_b);
+        let val_a = self.get_mut_inner(a).unwrap_or_else(|| unreachable!()).replace(None);
+        let val_b = self.get_mut_inner(b).unwrap_or_else(|| unreachable!()).replace(val_a);
+        self.get_mut_inner(a).unwrap_or_else(|| unreachable!()).replace(val_b);
     }
 
     /// Removes an element from the vector and returns it.
@@ -255,7 +255,7 @@ where
         self.get_mut_inner(index)
             .unwrap_or_else(|| env::panic_str(ERR_INDEX_OUT_OF_BOUNDS))
             .replace(Some(element))
-            .unwrap()
+            .unwrap_or_else(|| unreachable!())
     }
 
     /// Returns an iterator over the vector. This iterator will lazily load any values iterated

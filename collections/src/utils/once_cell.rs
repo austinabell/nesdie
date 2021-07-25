@@ -165,7 +165,7 @@ impl<T> OnceCell<T> {
         // `assert`, while keeping `set/get` would be sound, but it seems
         // better to panic, rather than to silently use an old value.
         assert!(self.set(val).is_ok(), "reentrant init");
-        Ok(self.get().unwrap())
+        Ok(self.get().unwrap_or_else(|| unreachable!()))
     }
 
     /// Takes the value out of this `OnceCell`, moving it back to an uninitialized state.

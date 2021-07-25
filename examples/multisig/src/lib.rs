@@ -123,8 +123,9 @@ pub struct MultiSigContract {
     active_requests_limit: u32,
 }
 
+#[no_mangle]
 pub extern "C" fn new() {
-    helper_env::setup_panic_hook();
+    // helper_env::setup_panic_hook();
     if env::attached_deposit() != 0 {
         env::panic_str("Method doesn't accept deposit");
     }
