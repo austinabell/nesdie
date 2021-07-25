@@ -8,6 +8,11 @@ pub(crate) use self::stable_map::StableMap;
 
 use nesdie::sys;
 
+extern crate alloc;
+
+use alloc::vec;
+use alloc::vec::Vec;
+
 const ATOMIC_OP_REGISTER: u64 = 0;
 
 pub(crate) fn append_slice(a: &[u8], b: &[u8]) -> Vec<u8> {
@@ -34,7 +39,7 @@ fn read_register(register_id: u64) -> Option<Vec<u8>> {
 /// Returns the size of the register. If register is not used returns `None`.
 fn register_len(register_id: u64) -> Option<u64> {
     let len = unsafe { sys::register_len(register_id) };
-    if len == std::u64::MAX {
+    if len == core::u64::MAX {
         None
     } else {
         Some(len)
