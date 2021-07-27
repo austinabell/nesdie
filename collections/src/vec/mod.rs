@@ -271,204 +271,142 @@ where
     }
 }
 
-// #[cfg(not(target_arch = "wasm32"))]
-// #[cfg(test)]
-// mod tests {
-//     use rand::{Rng, SeedableRng};
+#[cfg(not(target_arch = "wasm32"))]
+#[cfg(test)]
+mod tests {
+    use rand::{Rng, SeedableRng};
 
-//     use super::Vector;
-//     use crate::test_utils::test_env;
+    use super::Vector;
 
-//     #[test]
-//     fn test_push_pop() {
-//         test_env::setup();
-//         let mut rng = rand_xorshift::XorShiftRng::seed_from_u64(0);
-//         let mut vec = Vector::new(b"v".to_vec());
-//         let mut baseline = vec![];
-//         for _ in 0..500 {
-//             let value = rng.gen::<u64>();
-//             vec.push(value);
-//             baseline.push(value);
-//         }
-//         let actual: Vec<u64> = vec.iter().cloned().collect();
-//         assert_eq!(actual, baseline);
-//         for _ in 0..501 {
-//             assert_eq!(baseline.pop(), vec.pop());
-//         }
-//     }
+    #[test]
+    fn test_push_pop() {
+        let mut rng = rand_xorshift::XorShiftRng::seed_from_u64(0);
+        let mut vec = Vector::new(b"v".to_vec().into_boxed_slice());
+        let mut baseline = vec![];
+        for _ in 0..500 {
+            let value = rng.gen::<u64>();
+            vec.push(value);
+            baseline.push(value);
+        }
+        let actual: Vec<u64> = vec.iter().cloned().collect();
+        assert_eq!(actual, baseline);
+        for _ in 0..501 {
+            assert_eq!(baseline.pop(), vec.pop());
+        }
+    }
 
-//     #[test]
-//     pub fn test_replace() {
-//         test_env::setup();
-//         let mut rng = rand_xorshift::XorShiftRng::seed_from_u64(1);
-//         let mut vec = Vector::new(b"v".to_vec());
-//         let mut baseline = vec![];
-//         for _ in 0..500 {
-//             let value = rng.gen::<u64>();
-//             vec.push(value);
-//             baseline.push(value);
-//         }
-//         for _ in 0..500 {
-//             let index = rng.gen::<u32>() % vec.len();
-//             let value = rng.gen::<u64>();
-//             let old_value0 = vec[index];
-//             let old_value1 = core::mem::replace(vec.get_mut(index).unwrap(), value);
-//             let old_value2 = baseline[index as usize];
-//             assert_eq!(old_value0, old_value1);
-//             assert_eq!(old_value0, old_value2);
-//             *baseline.get_mut(index as usize).unwrap() = value;
-//         }
-//         let actual: Vec<_> = vec.iter().cloned().collect();
-//         assert_eq!(actual, baseline);
-//     }
+    #[test]
+    pub fn test_replace() {
+        let mut rng = rand_xorshift::XorShiftRng::seed_from_u64(1);
+        let mut vec = Vector::new(b"v".to_vec().into_boxed_slice());
+        let mut baseline = vec![];
+        for _ in 0..500 {
+            let value = rng.gen::<u64>();
+            vec.push(value);
+            baseline.push(value);
+        }
+        for _ in 0..500 {
+            let index = rng.gen::<u32>() % vec.len();
+            let value = rng.gen::<u64>();
+            let old_value0 = vec[index];
+            let old_value1 = core::mem::replace(vec.get_mut(index).unwrap(), value);
+            let old_value2 = baseline[index as usize];
+            assert_eq!(old_value0, old_value1);
+            assert_eq!(old_value0, old_value2);
+            *baseline.get_mut(index as usize).unwrap() = value;
+        }
+        let actual: Vec<_> = vec.iter().cloned().collect();
+        assert_eq!(actual, baseline);
+    }
 
-//     #[test]
-//     pub fn test_swap_remove() {
-//         test_env::setup();
-//         let mut rng = rand_xorshift::XorShiftRng::seed_from_u64(2);
-//         let mut vec = Vector::new(b"v".to_vec());
-//         let mut baseline = vec![];
-//         for _ in 0..500 {
-//             let value = rng.gen::<u64>();
-//             vec.push(value);
-//             baseline.push(value);
-//         }
-//         for _ in 0..500 {
-//             let index = rng.gen::<u32>() % vec.len();
-//             let old_value0 = vec[index];
-//             let old_value1 = vec.swap_remove(index);
-//             let old_value2 = baseline[index as usize];
-//             let last_index = baseline.len() - 1;
-//             baseline.swap(index as usize, last_index);
-//             baseline.pop();
-//             assert_eq!(old_value0, old_value1);
-//             assert_eq!(old_value0, old_value2);
-//         }
-//         let actual: Vec<_> = vec.iter().cloned().collect();
-//         assert_eq!(actual, baseline);
-//     }
+    #[test]
+    pub fn test_swap_remove() {
+        let mut rng = rand_xorshift::XorShiftRng::seed_from_u64(2);
+        let mut vec = Vector::new(b"v".to_vec().into_boxed_slice());
+        let mut baseline = vec![];
+        for _ in 0..500 {
+            let value = rng.gen::<u64>();
+            vec.push(value);
+            baseline.push(value);
+        }
+        for _ in 0..500 {
+            let index = rng.gen::<u32>() % vec.len();
+            let old_value0 = vec[index];
+            let old_value1 = vec.swap_remove(index);
+            let old_value2 = baseline[index as usize];
+            let last_index = baseline.len() - 1;
+            baseline.swap(index as usize, last_index);
+            baseline.pop();
+            assert_eq!(old_value0, old_value1);
+            assert_eq!(old_value0, old_value2);
+        }
+        let actual: Vec<_> = vec.iter().cloned().collect();
+        assert_eq!(actual, baseline);
+    }
 
-//     #[test]
-//     pub fn test_clear() {
-//         test_env::setup();
-//         let mut rng = rand_xorshift::XorShiftRng::seed_from_u64(3);
-//         let mut vec = Vector::new(b"v".to_vec());
-//         for _ in 0..100 {
-//             for _ in 0..(rng.gen::<u64>() % 20 + 1) {
-//                 let value = rng.gen::<u64>();
-//                 vec.push(value);
-//             }
-//             assert!(!vec.is_empty());
-//             vec.clear();
-//             assert!(vec.is_empty());
-//         }
-//     }
+    #[test]
+    pub fn test_clear() {
+        let mut rng = rand_xorshift::XorShiftRng::seed_from_u64(3);
+        let mut vec = Vector::new(b"v".to_vec().into_boxed_slice());
+        for _ in 0..100 {
+            for _ in 0..(rng.gen::<u64>() % 20 + 1) {
+                let value = rng.gen::<u64>();
+                vec.push(value);
+            }
+            assert!(!vec.is_empty());
+            vec.clear();
+            assert!(vec.is_empty());
+        }
+    }
 
-//     #[test]
-//     pub fn test_extend() {
-//         test_env::setup();
-//         let mut rng = rand_xorshift::XorShiftRng::seed_from_u64(0);
-//         let mut vec = Vector::new(b"v".to_vec());
-//         let mut baseline = vec![];
-//         for _ in 0..100 {
-//             let value = rng.gen::<u64>();
-//             vec.push(value);
-//             baseline.push(value);
-//         }
+    #[test]
+    pub fn test_extend() {
+        let mut rng = rand_xorshift::XorShiftRng::seed_from_u64(0);
+        let mut vec = Vector::new(b"v".to_vec().into_boxed_slice());
+        let mut baseline = vec![];
+        for _ in 0..100 {
+            let value = rng.gen::<u64>();
+            vec.push(value);
+            baseline.push(value);
+        }
 
-//         for _ in 0..100 {
-//             let mut tmp = vec![];
-//             for _ in 0..=(rng.gen::<u64>() % 20 + 1) {
-//                 let value = rng.gen::<u64>();
-//                 tmp.push(value);
-//             }
-//             baseline.extend(tmp.clone());
-//             vec.extend(tmp.clone());
-//         }
-//         let actual: Vec<_> = vec.iter().cloned().collect();
-//         assert_eq!(actual, baseline);
-//     }
+        for _ in 0..100 {
+            let mut tmp = vec![];
+            for _ in 0..=(rng.gen::<u64>() % 20 + 1) {
+                let value = rng.gen::<u64>();
+                tmp.push(value);
+            }
+            baseline.extend(tmp.clone());
+            vec.extend(tmp.clone());
+        }
+        let actual: Vec<_> = vec.iter().cloned().collect();
+        assert_eq!(actual, baseline);
+    }
 
-//     #[test]
-//     fn test_debug() {
-//         test_env::setup();
-//         let mut rng = rand_xorshift::XorShiftRng::seed_from_u64(4);
-//         let prefix = b"v".to_vec();
-//         let mut vec = Vector::new(prefix.clone());
-//         let mut baseline = vec![];
-//         for _ in 0..10 {
-//             let value = rng.gen::<u64>();
-//             vec.push(value);
-//             baseline.push(value);
-//         }
-//         let actual: Vec<_> = vec.iter().cloned().collect();
-//         assert_eq!(actual, baseline);
-//         for _ in 0..5 {
-//             assert_eq!(baseline.pop(), vec.pop());
-//         }
-//         if cfg!(feature = "expensive-debug") {
-//             assert_eq!(format!("{:#?}", vec), format!("{:#?}", baseline));
-//         } else {
-//             assert_eq!(
-//                 format!("{:?}", vec),
-//                 format!("Vector {{ len: 5, prefix: {:?} }}", vec.prefix)
-//             );
-//         }
+    #[test]
+    pub fn iterator_checks() {
+        let mut vec = Vector::new(b"v".to_vec().into_boxed_slice());
+        let mut baseline = vec![];
+        for i in 0..10 {
+            vec.push(i);
+            baseline.push(i);
+        }
 
-//         // * The storage is reused in the second part of this test, need to flush
-//         vec.flush();
+        let mut vec_iter = vec.iter();
+        let mut bl_iter = baseline.iter();
+        assert_eq!(vec_iter.next(), bl_iter.next());
+        assert_eq!(vec_iter.next_back(), bl_iter.next_back());
+        assert_eq!(vec_iter.nth(3), bl_iter.nth(3));
+        assert_eq!(vec_iter.nth_back(2), bl_iter.nth_back(2));
 
-//         use borsh::{BorshDeserialize, BorshSerialize};
-//         #[derive(Debug, BorshSerialize, BorshDeserialize)]
-//         struct TestType(u64);
+        // Check to make sure indexing overflow is handled correctly
+        assert!(vec_iter.nth(5).is_none());
+        assert!(bl_iter.nth(5).is_none());
 
-//         let deserialize_only_vec = Vector::<TestType> {
-//             len: vec.len(),
-//             prefix: prefix.into_boxed_slice(),
-//             cache: Default::default(),
-//         };
-//         let baseline: Vec<_> = baseline.into_iter().map(|x| TestType(x)).collect();
-//         if cfg!(feature = "expensive-debug") {
-//             assert_eq!(
-//                 format!("{:#?}", deserialize_only_vec),
-//                 format!("{:#?}", baseline)
-//             );
-//         } else {
-//             assert_eq!(
-//                 format!("{:?}", deserialize_only_vec),
-//                 format!(
-//                     "Vector {{ len: 5, prefix: {:?} }}",
-//                     deserialize_only_vec.prefix
-//                 )
-//             );
-//         }
-//     }
+        assert!(vec_iter.next().is_none());
+        assert!(bl_iter.next().is_none());
 
-//     #[test]
-//     pub fn iterator_checks() {
-//         test_env::setup();
-//         let mut vec = Vector::new(b"v");
-//         let mut baseline = vec![];
-//         for i in 0..10 {
-//             vec.push(i);
-//             baseline.push(i);
-//         }
-
-//         let mut vec_iter = vec.iter();
-//         let mut bl_iter = baseline.iter();
-//         assert_eq!(vec_iter.next(), bl_iter.next());
-//         assert_eq!(vec_iter.next_back(), bl_iter.next_back());
-//         assert_eq!(vec_iter.nth(3), bl_iter.nth(3));
-//         assert_eq!(vec_iter.nth_back(2), bl_iter.nth_back(2));
-
-//         // Check to make sure indexing overflow is handled correctly
-//         assert!(vec_iter.nth(5).is_none());
-//         assert!(bl_iter.nth(5).is_none());
-
-//         assert!(vec_iter.next().is_none());
-//         assert!(bl_iter.next().is_none());
-
-//         // Count check
-//         assert_eq!(vec.iter().count(), baseline.iter().count());
-//     }
-// }
+        // Count check
+        assert_eq!(vec.iter().count(), baseline.iter().count());
+    }
+}

@@ -203,209 +203,197 @@ where
     }
 }
 
-// #[cfg(not(target_arch = "wasm32"))]
-// #[cfg(test)]
-// mod tests {
-//     use crate::collections::UnorderedMap;
-//     use crate::test_utils::test_env;
-//     use rand::seq::SliceRandom;
-//     use rand::{Rng, SeedableRng};
-//     use std::collections::{HashMap, HashSet};
-//     use std::iter::FromIterator;
+#[cfg(not(target_arch = "wasm32"))]
+#[cfg(test)]
+mod tests {
+    use super::UnorderedMap;
+    use rand::seq::SliceRandom;
+    use rand::{Rng, SeedableRng};
+    use std::collections::{HashMap, HashSet};
 
-//     #[test]
-//     pub fn test_insert() {
-//         test_env::setup();
-//         let mut map = UnorderedMap::new(b"m");
-//         let mut rng = rand_xorshift::XorShiftRng::seed_from_u64(0);
-//         for _ in 0..500 {
-//             let key = rng.gen::<u64>();
-//             let value = rng.gen::<u64>();
-//             map.insert(&key, &value);
-//         }
-//     }
+    #[test]
+    pub fn test_insert() {
+        let mut map = UnorderedMap::new(Box::new(*b"m") as Box<_>);
+        let mut rng = rand_xorshift::XorShiftRng::seed_from_u64(0);
+        for _ in 0..500 {
+            let key = rng.gen::<u64>();
+            let value = rng.gen::<u64>();
+            map.insert(key, value);
+        }
+    }
 
-//     #[test]
-//     pub fn test_insert_remove() {
-//         test_env::setup();
-//         let mut map = UnorderedMap::new(b"m");
-//         let mut rng = rand_xorshift::XorShiftRng::seed_from_u64(1);
-//         let mut keys = vec![];
-//         let mut key_to_value = HashMap::new();
-//         for _ in 0..100 {
-//             let key = rng.gen::<u64>();
-//             let value = rng.gen::<u64>();
-//             keys.push(key);
-//             key_to_value.insert(key, value);
-//             map.insert(&key, &value);
-//         }
-//         keys.shuffle(&mut rng);
-//         for key in keys {
-//             let actual = map.remove(&key).unwrap();
-//             assert_eq!(actual, key_to_value[&key]);
-//         }
-//     }
+    #[test]
+    pub fn test_insert_remove() {
+        let mut map = UnorderedMap::new(Box::new(*b"m") as Box<_>);
+        let mut rng = rand_xorshift::XorShiftRng::seed_from_u64(1);
+        let mut keys = vec![];
+        let mut key_to_value = HashMap::new();
+        for _ in 0..100 {
+            let key = rng.gen::<u64>();
+            let value = rng.gen::<u64>();
+            keys.push(key);
+            key_to_value.insert(key, value);
+            map.insert(key, value);
+        }
+        keys.shuffle(&mut rng);
+        for key in keys {
+            let actual = map.remove(&key).unwrap();
+            assert_eq!(actual, key_to_value[&key]);
+        }
+    }
 
-//     #[test]
-//     pub fn test_remove_last_reinsert() {
-//         test_env::setup();
-//         let mut map = UnorderedMap::new(b"m");
-//         let key1 = 1u64;
-//         let value1 = 2u64;
-//         map.insert(&key1, &value1);
-//         let key2 = 3u64;
-//         let value2 = 4u64;
-//         map.insert(&key2, &value2);
+    #[test]
+    pub fn test_remove_last_reinsert() {
+        let mut map = UnorderedMap::new(Box::new(*b"m") as Box<_>);
+        let key1 = 1u64;
+        let value1 = 2u64;
+        map.insert(key1, value1);
+        let key2 = 3u64;
+        let value2 = 4u64;
+        map.insert(key2, value2);
 
-//         let actual_value2 = map.remove(&key2).unwrap();
-//         assert_eq!(actual_value2, value2);
+        let actual_value2 = map.remove(&key2).unwrap();
+        assert_eq!(actual_value2, value2);
 
-//         let actual_insert_value2 = map.insert(&key2, &value2);
-//         assert_eq!(actual_insert_value2, None);
-//     }
+        let actual_insert_value2 = map.insert(key2, value2);
+        assert_eq!(actual_insert_value2, None);
+    }
 
-//     #[test]
-//     pub fn test_insert_override_remove() {
-//         test_env::setup();
-//         let mut map = UnorderedMap::new(b"m");
-//         let mut rng = rand_xorshift::XorShiftRng::seed_from_u64(2);
-//         let mut keys = vec![];
-//         let mut key_to_value = HashMap::new();
-//         for _ in 0..100 {
-//             let key = rng.gen::<u64>();
-//             let value = rng.gen::<u64>();
-//             keys.push(key);
-//             key_to_value.insert(key, value);
-//             map.insert(&key, &value);
-//         }
-//         keys.shuffle(&mut rng);
-//         for key in &keys {
-//             let value = rng.gen::<u64>();
-//             let actual = map.insert(key, &value).unwrap();
-//             assert_eq!(actual, key_to_value[key]);
-//             key_to_value.insert(*key, value);
-//         }
-//         keys.shuffle(&mut rng);
-//         for key in keys {
-//             let actual = map.remove(&key).unwrap();
-//             assert_eq!(actual, key_to_value[&key]);
-//         }
-//     }
+    #[test]
+    pub fn test_insert_override_remove() {
+        let mut map = UnorderedMap::new(Box::new(*b"m") as Box<_>);
+        let mut rng = rand_xorshift::XorShiftRng::seed_from_u64(2);
+        let mut keys = vec![];
+        let mut key_to_value = HashMap::new();
+        for _ in 0..100 {
+            let key = rng.gen::<u64>();
+            let value = rng.gen::<u64>();
+            keys.push(key);
+            key_to_value.insert(key, value);
+            map.insert(key, value);
+        }
+        keys.shuffle(&mut rng);
+        for key in &keys {
+            let value = rng.gen::<u64>();
+            let actual = map.insert(*key, value).unwrap();
+            assert_eq!(actual, key_to_value[key]);
+            key_to_value.insert(*key, value);
+        }
+        keys.shuffle(&mut rng);
+        for key in keys {
+            let actual = map.remove(&key).unwrap();
+            assert_eq!(actual, key_to_value[&key]);
+        }
+    }
 
-//     #[test]
-//     pub fn test_get_non_existent() {
-//         test_env::setup();
-//         let mut map = UnorderedMap::new(b"m");
-//         let mut rng = rand_xorshift::XorShiftRng::seed_from_u64(3);
-//         let mut key_to_value = HashMap::new();
-//         for _ in 0..500 {
-//             let key = rng.gen::<u64>() % 20_000;
-//             let value = rng.gen::<u64>();
-//             key_to_value.insert(key, value);
-//             map.insert(&key, &value);
-//         }
-//         for _ in 0..500 {
-//             let key = rng.gen::<u64>() % 20_000;
-//             assert_eq!(map.get(&key), key_to_value.get(&key).cloned());
-//         }
-//     }
+    #[test]
+    pub fn test_get_non_existent() {
+        let mut map = UnorderedMap::new(Box::new(*b"m") as Box<_>);
+        let mut rng = rand_xorshift::XorShiftRng::seed_from_u64(3);
+        let mut key_to_value = HashMap::new();
+        for _ in 0..500 {
+            let key = rng.gen::<u64>() % 20_000;
+            let value = rng.gen::<u64>();
+            key_to_value.insert(key, value);
+            map.insert(key, value);
+        }
+        for _ in 0..500 {
+            let key = rng.gen::<u64>() % 20_000;
+            assert_eq!(map.get(&key), key_to_value.get(&key));
+        }
+    }
 
-//     #[test]
-//     pub fn test_to_vec() {
-//         test_env::setup();
-//         let mut map = UnorderedMap::new(b"m");
-//         let mut rng = rand_xorshift::XorShiftRng::seed_from_u64(4);
-//         let mut key_to_value = HashMap::new();
-//         for _ in 0..400 {
-//             let key = rng.gen::<u64>();
-//             let value = rng.gen::<u64>();
-//             key_to_value.insert(key, value);
-//             map.insert(&key, &value);
-//         }
-//         let actual = HashMap::from_iter(map.to_vec());
-//         assert_eq!(actual, key_to_value);
-//     }
+    #[test]
+    pub fn test_to_vec() {
+        let mut map = UnorderedMap::new(Box::new(*b"m") as Box<_>);
+        let mut rng = rand_xorshift::XorShiftRng::seed_from_u64(4);
+        let mut key_to_value = HashMap::new();
+        for _ in 0..400 {
+            let key = rng.gen::<u64>();
+            let value = rng.gen::<u64>();
+            key_to_value.insert(key, value);
+            map.insert(key, value);
+        }
+        let actual: HashMap<_, _> = map.iter().map(|(k, v)| (*k, *v)).collect();
+        assert_eq!(actual, key_to_value);
+    }
 
-//     #[test]
-//     pub fn test_clear() {
-//         test_env::setup();
-//         let mut map = UnorderedMap::new(b"m");
-//         let mut rng = rand_xorshift::XorShiftRng::seed_from_u64(5);
-//         for _ in 0..10 {
-//             for _ in 0..=(rng.gen::<u64>() % 20 + 1) {
-//                 let key = rng.gen::<u64>();
-//                 let value = rng.gen::<u64>();
-//                 map.insert(&key, &value);
-//             }
-//             assert!(!map.to_vec().is_empty());
-//             map.clear();
-//             assert!(map.to_vec().is_empty());
-//         }
-//     }
+    #[test]
+    pub fn test_clear() {
+        let mut map = UnorderedMap::new(Box::new(*b"m") as Box<_>);
+        let mut rng = rand_xorshift::XorShiftRng::seed_from_u64(5);
+        for _ in 0..10 {
+            for _ in 0..=(rng.gen::<u64>() % 20 + 1) {
+                let key = rng.gen::<u64>();
+                let value = rng.gen::<u64>();
+                map.insert(key, value);
+            }
+            assert!(!map.iter().next().is_none());
+            map.clear();
+            assert!(map.iter().next().is_none());
+        }
+    }
 
-//     #[test]
-//     pub fn test_keys_values() {
-//         test_env::setup();
-//         let mut map = UnorderedMap::new(b"m");
-//         let mut rng = rand_xorshift::XorShiftRng::seed_from_u64(4);
-//         let mut key_to_value = HashMap::new();
-//         for _ in 0..400 {
-//             let key = rng.gen::<u64>();
-//             let value = rng.gen::<u64>();
-//             key_to_value.insert(key, value);
-//             map.insert(&key, &value);
-//         }
-//         let actual: HashMap<u64, u64> = HashMap::from_iter(map.to_vec());
-//         assert_eq!(
-//             actual.keys().collect::<HashSet<_>>(),
-//             key_to_value.keys().collect::<HashSet<_>>()
-//         );
-//         assert_eq!(
-//             actual.values().collect::<HashSet<_>>(),
-//             key_to_value.values().collect::<HashSet<_>>()
-//         );
-//     }
+    #[test]
+    pub fn test_keys_values() {
+        let mut map = UnorderedMap::new(Box::new(*b"m") as Box<_>);
+        let mut rng = rand_xorshift::XorShiftRng::seed_from_u64(4);
+        let mut key_to_value = HashMap::new();
+        for _ in 0..400 {
+            let key = rng.gen::<u64>();
+            let value = rng.gen::<u64>();
+            key_to_value.insert(key, value);
+            map.insert(key, value);
+        }
+        let actual: HashMap<_, _> = map.iter().map(|(k, v)| (*k, *v)).collect();
+        assert_eq!(
+            actual.keys().collect::<HashSet<_>>(),
+            key_to_value.keys().collect::<HashSet<_>>()
+        );
+        assert_eq!(
+            actual.values().collect::<HashSet<_>>(),
+            key_to_value.values().collect::<HashSet<_>>()
+        );
+    }
 
-//     #[test]
-//     pub fn test_iter() {
-//         test_env::setup();
-//         let mut map = UnorderedMap::new(b"m");
-//         let mut rng = rand_xorshift::XorShiftRng::seed_from_u64(4);
-//         let mut key_to_value = HashMap::new();
-//         for _ in 0..400 {
-//             let key = rng.gen::<u64>();
-//             let value = rng.gen::<u64>();
-//             key_to_value.insert(key, value);
-//             map.insert(&key, &value);
-//         }
-//         let actual: HashMap<u64, u64> = map.iter().collect();
-//         assert_eq!(actual, key_to_value);
-//     }
+    #[test]
+    pub fn test_iter() {
+        let mut map = UnorderedMap::new(Box::new(*b"m") as Box<_>);
+        let mut rng = rand_xorshift::XorShiftRng::seed_from_u64(4);
+        let mut key_to_value = HashMap::new();
+        for _ in 0..400 {
+            let key = rng.gen::<u64>();
+            let value = rng.gen::<u64>();
+            key_to_value.insert(key, value);
+            map.insert(key, value);
+        }
+        let actual: HashMap<_, _> = map.iter().map(|(k, v)| (*k, *v)).collect();
+        assert_eq!(actual, key_to_value);
+    }
 
-//     #[test]
-//     pub fn test_extend() {
-//         test_env::setup();
-//         let mut map = UnorderedMap::new(b"m");
-//         let mut rng = rand_xorshift::XorShiftRng::seed_from_u64(4);
-//         let mut key_to_value = HashMap::new();
-//         for _ in 0..100 {
-//             let key = rng.gen::<u64>();
-//             let value = rng.gen::<u64>();
-//             key_to_value.insert(key, value);
-//             map.insert(&key, &value);
-//         }
-//         for _ in 0..10 {
-//             let mut tmp = vec![];
-//             for _ in 0..=(rng.gen::<u64>() % 20 + 1) {
-//                 let key = rng.gen::<u64>();
-//                 let value = rng.gen::<u64>();
-//                 tmp.push((key, value));
-//             }
-//             key_to_value.extend(tmp.iter().cloned());
-//             map.extend(tmp.iter().cloned());
-//         }
+    #[test]
+    pub fn test_extend() {
+        let mut map = UnorderedMap::new(Box::new(*b"m") as Box<_>);
+        let mut rng = rand_xorshift::XorShiftRng::seed_from_u64(4);
+        let mut key_to_value = HashMap::new();
+        for _ in 0..100 {
+            let key = rng.gen::<u64>();
+            let value = rng.gen::<u64>();
+            key_to_value.insert(key, value);
+            map.insert(key, value);
+        }
+        for _ in 0..10 {
+            let mut tmp = vec![];
+            for _ in 0..=(rng.gen::<u64>() % 20 + 1) {
+                let key = rng.gen::<u64>();
+                let value = rng.gen::<u64>();
+                tmp.push((key, value));
+            }
+            key_to_value.extend(tmp.iter().cloned());
+            map.extend(tmp.iter().cloned());
+        }
 
-//         let actual: HashMap<u64, u64> = map.iter().collect();
-//         assert_eq!(actual, key_to_value);
-//     }
-// }
+        let actual: HashMap<_, _> = map.iter().map(|(k, v)| (*k, *v)).collect();
+        assert_eq!(actual, key_to_value);
+    }
+}
