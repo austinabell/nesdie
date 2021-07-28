@@ -15,9 +15,9 @@ use borsh::{self, BorshDeserialize, BorshSerialize};
 // use miniserde::de::Visitor;
 // use miniserde::ser::Fragment;
 // use miniserde::{make_place, Deserialize, Serialize};
-use serde::{Serialize, Deserialize};
 use nesdie::env;
 use nesdie_collections::legacy_unordered_map::UnorderedMap;
+use serde::{Deserialize, Serialize};
 use utils::json::{Base64VecU8, U128, U64};
 use utils::types::{AccountId, Promise, PromiseOrValue, PublicKey};
 
@@ -124,14 +124,12 @@ pub struct MultiSigContract {
     active_requests_limit: u32,
 }
 
-
-
-// // If you haven't initialized the contract with new(num_confirmations: u32)
-// impl Default for MultiSigContract {
-//     fn default() -> Self {
-//         env::panic(b"Multisig contract should be initialized before usage")
-//     }
-// }
+// If you haven't initialized the contract with new(num_confirmations: u32)
+impl Default for MultiSigContract {
+    fn default() -> Self {
+        env::panic_str("Multisig contract should be initialized before usage")
+    }
+}
 
 // #[near_bindgen]
 impl MultiSigContract {

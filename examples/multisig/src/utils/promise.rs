@@ -413,16 +413,15 @@ impl Drop for Promise {
     }
 }
 
-// TODO serialize
-// impl serde::Serialize for Promise {
-//     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-//     where
-//         S: serde::Serializer,
-//     {
-//         *self.should_return.borrow_mut() = true;
-//         serializer.serialize_unit()
-//     }
-// }
+impl serde::Serialize for Promise {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        *self.should_return.borrow_mut() = true;
+        serializer.serialize_unit()
+    }
+}
 
 impl borsh::BorshSerialize for Promise {
     fn serialize<W: Write>(&self, _writer: &mut W) -> Result<(), Error> {
@@ -434,8 +433,8 @@ impl borsh::BorshSerialize for Promise {
     }
 }
 
-// #[derive(serde::Serialize)]
-// #[serde(untagged)]
+#[derive(serde::Serialize)]
+#[serde(untagged)]
 pub enum PromiseOrValue<T> {
     Promise(Promise),
     Value(T),
