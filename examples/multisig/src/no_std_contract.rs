@@ -76,13 +76,9 @@ pub extern "C" fn delete_request() {
     if env::attached_deposit() != 0 {
         env::panic_str(ERR_NO_DEPOSIT);
     }
-    #[derive(Deserialize)]
-    struct Input {
-        request_id: RequestId,
-    }
 
     let input = helper_env::input().unwrap_or_else(|| unreachable!());
-    let Input { request_id } = deserialize_input(&input);
+    let IdInput { request_id } = deserialize_input(&input);
     let mut contract: MultiSigContract = helper_env::state_read().unwrap_or_default();
     contract.delete_request(request_id);
     helper_env::state_write(&contract)
@@ -153,13 +149,9 @@ pub extern "C" fn get_confirmations() {
     if env::attached_deposit() != 0 {
         env::panic_str(ERR_NO_DEPOSIT);
     }
-    #[derive(Deserialize)]
-    struct Input {
-        request_id: RequestId,
-    }
 
     let input = helper_env::input().unwrap_or_else(|| unreachable!());
-    let Input { request_id } = deserialize_input(&input);
+    let IdInput { request_id } = deserialize_input(&input);
     let contract: MultiSigContract = helper_env::state_read().unwrap_or_default();
     let result = contract.get_confirmations(request_id);
     let result = json::to_string(&result);
