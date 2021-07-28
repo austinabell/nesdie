@@ -52,7 +52,7 @@ impl PromiseAction {
         match self {
             CreateAccount => crate::helper_env::promise_batch_action_create_account(promise_index),
             DeployContract { code } => {
-                crate::helper_env::promise_batch_action_deploy_contract(promise_index, &code)
+                crate::helper_env::promise_batch_action_deploy_contract(promise_index, code)
             }
             FunctionCall {
                 method_name,
@@ -61,8 +61,8 @@ impl PromiseAction {
                 gas,
             } => crate::helper_env::promise_batch_action_function_call(
                 promise_index,
-                &method_name,
-                &arguments,
+                method_name,
+                arguments,
                 *amount,
                 *gas,
             ),
@@ -91,7 +91,7 @@ impl PromiseAction {
                 *nonce,
                 *allowance,
                 receiver_id,
-                &method_names,
+                method_names,
             ),
             DeleteKey { public_key } => {
                 crate::helper_env::promise_batch_action_delete_key(promise_index, public_key)

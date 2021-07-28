@@ -346,7 +346,7 @@ impl MultiSigContract {
         let request_added = MultiSigRequestWithSigner {
             signer_pk: helper_env::signer_account_pk(),
             added_timestamp: env::block_timestamp(),
-            request: request,
+            request,
         };
         self.requests.insert(self.request_nonce, request_added);
         let confirmations = BTreeSet::new();
@@ -392,7 +392,7 @@ impl MultiSigContract {
                     self.assert_self_request(receiver_id.clone());
                     if let Some(permission) = permission {
                         promise.add_access_key(
-                            public_key.into(),
+                            public_key,
                             permission
                                 .allowance
                                 .map(|x| x.into())
@@ -402,12 +402,12 @@ impl MultiSigContract {
                         )
                     } else {
                         // wallet UI should warn user if receiver_id == env::current_account_id(), adding FAK will render multisig useless
-                        promise.add_full_access_key(public_key.into())
+                        promise.add_full_access_key(public_key)
                     }
                 }
                 MultiSigRequestAction::DeleteKey { public_key } => {
                     self.assert_self_request(receiver_id.clone());
-                    let pk: PublicKey = public_key.into();
+                    let pk: PublicKey = public_key;
                     // delete outstanding requests by public_key
                     let request_ids: Vec<u32> = self
                         .requests
@@ -500,7 +500,7 @@ impl MultiSigContract {
             .unwrap_or(0);
         // safety check for underrun (unlikely since original_signer_pk must have num_requests_pk > 0)
         if num_requests > 0 {
-            num_requests = num_requests - 1;
+            num_requests -= 1;
         }
         self.num_requests_pk
             .insert(original_signer_pk, num_requests);
@@ -552,10 +552,7 @@ impl MultiSigContract {
     }
 
     pub fn get_num_requests_pk(&self, public_key: PublicKey) -> u32 {
-        self.num_requests_pk
-            .get(&public_key.into())
-            .copied()
-            .unwrap_or(0)
+        self.num_requests_pk.get(&public_key).copied().unwrap_or(0)
     }
 
     pub fn list_request_ids(&self) -> Vec<RequestId> {

@@ -237,13 +237,11 @@ pub fn promise_and(promise_indices: &[PromiseIndex]) -> PromiseIndex {
     unsafe { sys::promise_and(data.as_ptr() as _, promise_indices.len() as _) }
 }
 
-pub fn promise_batch_create(account_id: &AccountId) -> PromiseIndex {
-    let account_id = account_id.as_slice();
+pub fn promise_batch_create(account_id: &[u8]) -> PromiseIndex {
     unsafe { sys::promise_batch_create(account_id.len() as _, account_id.as_ptr() as _) }
 }
 
-pub fn promise_batch_then(promise_index: PromiseIndex, account_id: &AccountId) -> PromiseIndex {
-    let account_id = account_id.as_slice();
+pub fn promise_batch_then(promise_index: PromiseIndex, account_id: &[u8]) -> PromiseIndex {
     unsafe {
         sys::promise_batch_then(
             promise_index,
@@ -324,10 +322,9 @@ pub fn promise_batch_action_add_key_with_function_call(
     public_key: &PublicKey,
     nonce: u64,
     allowance: Balance,
-    receiver_id: &AccountId,
+    receiver_id: &[u8],
     method_names: &[u8],
 ) {
-    let receiver_id = receiver_id.as_slice();
     unsafe {
         sys::promise_batch_action_add_key_with_function_call(
             promise_index,
@@ -354,9 +351,8 @@ pub fn promise_batch_action_delete_key(promise_index: PromiseIndex, public_key: 
 
 pub fn promise_batch_action_delete_account(
     promise_index: PromiseIndex,
-    beneficiary_id: &AccountId,
+    beneficiary_id: &[u8],
 ) {
-    let beneficiary_id = beneficiary_id.as_slice();
     unsafe {
         sys::promise_batch_action_delete_account(
             promise_index,
