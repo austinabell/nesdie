@@ -6,9 +6,9 @@ use alloc::vec::Vec;
 use borsh::{BorshDeserialize, BorshSerialize};
 use bs58::decode::Error as B58Error;
 use core::convert::TryFrom;
-// use miniserde::de::Visitor;
-// use miniserde::make_place;
-// use miniserde::ser::Fragment;
+use miniserde::de::Visitor;
+use miniserde::make_place;
+use miniserde::ser::Fragment;
 
 /// PublicKey curve
 #[derive(Debug, Clone, Copy, PartialOrd, Ord, Eq, PartialEq, BorshDeserialize, BorshSerialize)]
@@ -144,48 +144,48 @@ impl TryFrom<Vec<u8>> for PublicKey {
     }
 }
 
-// impl miniserde::Serialize for PublicKey {
-//     fn begin(&self) -> miniserde::ser::Fragment {
-//         Fragment::Str(String::from(self).into())
-//     }
-// }
-
-// make_place!(Place);
-// impl Visitor for Place<PublicKey> {
-//     fn string(&mut self, s: &str) -> miniserde::Result<()> {
-//         self.out = Some(
-//             s.parse().map_err(|_| miniserde::Error)?,
-//             // .unwrap_or_else(|_| env::panic_str("failed to deserialize public key")),
-//         );
-//         Ok(())
-//     }
-// }
-
-// impl miniserde::Deserialize for PublicKey {
-//     fn begin(out: &mut Option<Self>) -> &mut dyn Visitor {
-//         Place::new(out)
-//     }
-// }
-
-impl serde::Serialize for PublicKey {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        serializer.serialize_str(&String::from(self))
+impl miniserde::Serialize for PublicKey {
+    fn begin(&self) -> miniserde::ser::Fragment {
+        Fragment::Str(String::from(self).into())
     }
 }
 
-impl<'de> serde::Deserialize<'de> for PublicKey {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        let s: String = serde::Deserialize::deserialize(deserializer)?;
-        s.parse::<PublicKey>()
-            .map_err(|_| serde::de::Error::custom("Failed to deserialize PublicKey"))
+make_place!(Place);
+impl Visitor for Place<PublicKey> {
+    fn string(&mut self, s: &str) -> miniserde::Result<()> {
+        self.out = Some(
+            s.parse().map_err(|_| miniserde::Error)?,
+            // .unwrap_or_else(|_| env::panic_str("failed to deserialize public key")),
+        );
+        Ok(())
     }
 }
+
+impl miniserde::Deserialize for PublicKey {
+    fn begin(out: &mut Option<Self>) -> &mut dyn Visitor {
+        Place::new(out)
+    }
+}
+
+// impl serde::Serialize for PublicKey {
+//     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+//     where
+//         S: serde::Serializer,
+//     {
+//         serializer.serialize_str(&String::from(self))
+//     }
+// }
+
+// impl<'de> serde::Deserialize<'de> for PublicKey {
+//     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+//     where
+//         D: serde::Deserializer<'de>,
+//     {
+//         let s: String = serde::Deserialize::deserialize(deserializer)?;
+//         s.parse::<PublicKey>()
+//             .map_err(|_| serde::de::Error::custom("Failed to deserialize PublicKey"))
+//     }
+// }
 
 impl From<&PublicKey> for String {
     fn from(str_public_key: &PublicKey) -> Self {
@@ -252,6 +252,7 @@ mod tests {
     use super::*;
     use core::convert::TryInto;
     use core::str::FromStr;
+    use miniserde::json;
 
     fn expected_key() -> PublicKey {
         let mut key = vec![CurveType::ED25519 as u8];
@@ -266,8 +267,7 @@ mod tests {
     #[test]
     fn test_public_key_deser() {
         let key: PublicKey =
-            serde_json::from_str("\"ed25519:6E8sCci9badyRkXb3JoRpBj5p8C6Tw41ELDZoiihKEtp\"")
-                .unwrap();
+            json::from_str("\"ed25519:6E8sCci9badyRkXb3JoRpBj5p8C6Tw41ELDZoiihKEtp\"").unwrap();
         assert_eq!(key, expected_key());
     }
 
@@ -275,7 +275,7 @@ mod tests {
     fn test_public_key_ser() {
         let key: PublicKey = expected_key();
 
-        let actual: String = serde_json::to_string(&key).unwrap();
+        let actual: String = json::to_string(&key);
         assert_eq!(
             actual,
             "\"ed25519:6E8sCci9badyRkXb3JoRpBj5p8C6Tw41ELDZoiihKEtp\""

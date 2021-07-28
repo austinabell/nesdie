@@ -8,16 +8,18 @@ mod no_std_contract;
 
 extern crate alloc;
 
+use alloc::boxed::Box;
+
 use alloc::collections::BTreeSet;
 use alloc::string::String;
 use alloc::vec::Vec;
 use borsh::{self, BorshDeserialize, BorshSerialize};
-// use miniserde::de::Visitor;
-// use miniserde::ser::Fragment;
-// use miniserde::{make_place, Deserialize, Serialize};
+use miniserde::__private::Cow;
+use miniserde::de::Visitor;
+use miniserde::ser::Fragment;
+use miniserde::{make_place, Deserialize, Serialize};
 use nesdie::env;
 use nesdie_collections::legacy_unordered_map::UnorderedMap;
-use serde::{Deserialize, Serialize};
 use utils::json::{Base64VecU8, U128, U64};
 use utils::types::{AccountId, Promise, PromiseOrValue, PublicKey};
 
@@ -40,7 +42,7 @@ pub struct FunctionCallPermission {
 }
 
 /// Lowest level action that can be performed by the multisig contract.
-#[derive(Clone, PartialEq, BorshDeserialize, BorshSerialize, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, BorshDeserialize, BorshSerialize)]
 // #[serde(tag = "type", crate = "near_sdk::serde")]
 pub enum MultiSigRequestAction {
     /// Transfers given amount to receiver.
@@ -73,29 +75,203 @@ pub enum MultiSigRequestAction {
     SetActiveRequestsLimit { active_requests_limit: u32 },
 }
 
-// impl miniserde::Serialize for MultiSigRequestAction {
-//     fn begin(&self) -> Fragment {
-//         todo!()
-//         // Fragment::Str(base64::encode(&self.0).into())
-//     }
-// }
+struct MultiSigRequestActionStream<'a> {
+    data: &'a MultiSigRequestAction,
+    state: usize,
+}
 
-// // make_place!(Place);
-// impl Visitor for Place<MultiSigRequestAction> {
-//     fn string(&mut self, _s: &str) -> miniserde::Result<()> {
-//         todo!();
-//         // self.out = Some(Base64VecU8(
-//         //     base64::decode(s).map_err(|_| miniserde::Error)?,
-//         // ));
-//         // Ok(())
-//     }
-// }
+impl<'a> miniserde::ser::Map for MultiSigRequestActionStream<'a> {
+    fn next(&mut self) -> Option<(Cow<str>, &dyn Serialize)> {
+        let state = self.state;
+        self.state += 1;
+        use self::MultiSigRequestAction as Msa;
+        match self.data {
+            Msa::Transfer { amount } => match state {
+                0 => Some((Cow::Borrowed("type"), &"Transfer")),
+                1 => Some((Cow::Borrowed("amount"), amount)),
+                _ => None,
+            },
+            Msa::CreateAccount => match state {
+                0 => Some((Cow::Borrowed("type"), &"CreateAccount")),
+                _ => None,
+            },
+            Msa::DeployContract { code } => match state {
+                0 => Some((Cow::Borrowed("type"), &"DeployContract")),
+                1 => Some((Cow::Borrowed("code"), code)),
+                _ => None,
+            },
+            Msa::AddKey {
+                public_key,
+                permission,
+            } => match state {
+                0 => Some((Cow::Borrowed("type"), &"AddKey")),
+                1 => Some((Cow::Borrowed("public_key"), public_key)),
+                2 => Some((Cow::Borrowed("permission"), permission)),
+                _ => None,
+            },
+            Msa::DeleteKey { public_key } => match state {
+                0 => Some((Cow::Borrowed("type"), &"DeleteKey")),
+                1 => Some((Cow::Borrowed("public_key"), public_key)),
+                _ => None,
+            },
+            Msa::FunctionCall {
+                method_name,
+                args,
+                deposit,
+                gas,
+            } => match state {
+                0 => Some((Cow::Borrowed("type"), &"FunctionCall")),
+                1 => Some((Cow::Borrowed("method_name"), method_name)),
+                2 => Some((Cow::Borrowed("args"), args)),
+                3 => Some((Cow::Borrowed("deposit"), deposit)),
+                4 => Some((Cow::Borrowed("gas"), gas)),
+                _ => None,
+            },
+            Msa::SetNumConfirmations { num_confirmations } => match state {
+                0 => Some((Cow::Borrowed("type"), &"SetNumConfirmations")),
+                1 => Some((Cow::Borrowed("num_confirmations"), num_confirmations)),
+                _ => None,
+            },
+            Msa::SetActiveRequestsLimit {
+                active_requests_limit,
+            } => match state {
+                0 => Some((Cow::Borrowed("type"), &"SetActiveRequestsLimit")),
+                1 => Some((
+                    Cow::Borrowed("active_requests_limit"),
+                    active_requests_limit,
+                )),
+                _ => None,
+            },
+        }
+    }
+}
 
-// impl miniserde::Deserialize for MultiSigRequestAction {
-//     fn begin(out: &mut Option<Self>) -> &mut dyn Visitor {
-//         Place::new(out)
-//     }
-// }
+impl miniserde::Serialize for MultiSigRequestAction {
+    fn begin(&self) -> Fragment {
+        Fragment::Map(Box::new(MultiSigRequestActionStream {
+            data: self,
+            state: 0,
+        }))
+    }
+}
+
+make_place!(Place);
+impl Visitor for Place<MultiSigRequestAction> {
+    fn map(&mut self) -> miniserde::Result<Box<dyn miniserde::de::Map + '_>> {
+        // Like for sequences, we produce a builder that can hand out places
+        // to write one struct field at a time.
+        Ok(Box::new(MsraBuilder {
+            ty: None,
+            amount: None,
+            code: None,
+            public_key: None,
+            permission: None,
+            delete_key: None,
+            method_name: None,
+            args: None,
+            deposit: None,
+            gas: None,
+            num_confirmations: None,
+            active_requests_limit: None,
+            out: &mut self.out,
+        }))
+    }
+}
+
+struct MsraBuilder<'a> {
+    ty: Option<String>,
+    amount: Option<U128>,
+    code: Option<Base64VecU8>,
+    public_key: Option<PublicKey>,
+    permission: Option<FunctionCallPermission>,
+    delete_key: Option<PublicKey>,
+    method_name: Option<String>,
+    args: Option<Base64VecU8>,
+    deposit: Option<U128>,
+    gas: Option<U64>,
+    num_confirmations: Option<u32>,
+    active_requests_limit: Option<u32>,
+    out: &'a mut Option<MultiSigRequestAction>,
+}
+
+#[allow(bare_trait_objects)]
+impl<'a> miniserde::de::Map for MsraBuilder<'a> {
+    fn key(&mut self, k: &str) -> miniserde::Result<&mut dyn Visitor> {
+        match k {
+            "type" => Ok(Deserialize::begin(&mut self.ty)),
+            "code" => Ok(Deserialize::begin(&mut self.code)),
+            "amount" => Ok(Deserialize::begin(&mut self.amount)),
+            "public_key" => Ok(Deserialize::begin(&mut self.public_key)),
+            "permission" => Ok(Deserialize::begin(&mut self.permission)),
+            "delete_key" => Ok(Deserialize::begin(&mut self.delete_key)),
+            "method_name" => Ok(Deserialize::begin(&mut self.method_name)),
+            "args" => Ok(Deserialize::begin(&mut self.args)),
+            "deposit" => Ok(Deserialize::begin(&mut self.deposit)),
+            "gas" => Ok(Deserialize::begin(&mut self.gas)),
+            "num_confirmations" => Ok(Deserialize::begin(&mut self.num_confirmations)),
+            "active_requests_limit" => Ok(Deserialize::begin(&mut self.active_requests_limit)),
+            _ => Ok(Visitor::ignore()),
+        }
+    }
+
+    fn finish(&mut self) -> miniserde::Result<()> {
+        match self.ty.as_ref().ok_or(miniserde::Error)?.as_str() {
+            "Transfer" => {
+                let amount = self.amount.take().ok_or(miniserde::Error)?;
+                *self.out = Some(MultiSigRequestAction::Transfer { amount });
+            }
+            "CreateAccount" => {
+                *self.out = Some(MultiSigRequestAction::CreateAccount);
+            }
+            "DeployContract" => {
+                let code = self.code.take().ok_or(miniserde::Error)?;
+                *self.out = Some(MultiSigRequestAction::DeployContract { code });
+            }
+            "AddKey" => {
+                let public_key = self.public_key.take().ok_or(miniserde::Error)?;
+                *self.out = Some(MultiSigRequestAction::AddKey {
+                    public_key,
+                    permission: core::mem::take(&mut self.permission),
+                });
+            }
+            "DeleteKey" => {
+                let public_key = self.public_key.take().ok_or(miniserde::Error)?;
+                *self.out = Some(MultiSigRequestAction::DeleteKey { public_key });
+            }
+            "FunctionCall" => {
+                let method_name = self.method_name.take().ok_or(miniserde::Error)?;
+                let args = self.args.take().ok_or(miniserde::Error)?;
+                let deposit = self.deposit.take().ok_or(miniserde::Error)?;
+                let gas = self.gas.take().ok_or(miniserde::Error)?;
+                *self.out = Some(MultiSigRequestAction::FunctionCall {
+                    method_name,
+                    args,
+                    deposit,
+                    gas,
+                });
+            }
+            "SetNumConfirmations" => {
+                let num_confirmations = self.num_confirmations.take().ok_or(miniserde::Error)?;
+                *self.out = Some(MultiSigRequestAction::SetNumConfirmations { num_confirmations });
+            }
+            "SetActiveRequestsLimit" => {
+                let active_requests_limit =
+                    self.active_requests_limit.take().ok_or(miniserde::Error)?;
+                *self.out = Some(MultiSigRequestAction::SetActiveRequestsLimit {
+                    active_requests_limit,
+                });
+            }
+            _ => return Err(miniserde::Error),
+        }
+        Ok(())
+    }
+}
+
+impl miniserde::Deserialize for MultiSigRequestAction {
+    fn begin(out: &mut Option<Self>) -> &mut dyn Visitor {
+        Place::new(out)
+    }
+}
 
 // The request the user makes specifying the receiving account and actions they want to execute (1 tx)
 #[derive(Clone, PartialEq, BorshDeserialize, BorshSerialize, Serialize, Deserialize)]

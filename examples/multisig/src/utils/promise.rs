@@ -4,6 +4,7 @@ use borsh::maybestd::io::Error;
 use borsh::maybestd::io::Write;
 use borsh::maybestd::rc::Rc;
 use core::cell::RefCell;
+use miniserde::ser::Fragment;
 
 use crate::alloc::vec;
 use crate::alloc::vec::Vec;
@@ -413,15 +414,22 @@ impl Drop for Promise {
     }
 }
 
-impl serde::Serialize for Promise {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
+impl miniserde::Serialize for Promise {
+    fn begin(&self) -> Fragment {
         *self.should_return.borrow_mut() = true;
-        serializer.serialize_unit()
+        Fragment::Null
     }
 }
+
+// impl serde::Serialize for Promise {
+//     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+//     where
+//         S: serde::Serializer,
+//     {
+//         *self.should_return.borrow_mut() = true;
+//         serializer.serialize_unit()
+//     }
+// }
 
 impl borsh::BorshSerialize for Promise {
     fn serialize<W: Write>(&self, _writer: &mut W) -> Result<(), Error> {
@@ -433,8 +441,6 @@ impl borsh::BorshSerialize for Promise {
     }
 }
 
-#[derive(serde::Serialize)]
-#[serde(untagged)]
 pub enum PromiseOrValue<T> {
     Promise(Promise),
     Value(T),
@@ -453,6 +459,17 @@ impl<T: borsh::BorshSerialize> borsh::BorshSerialize for PromiseOrValue<T> {
             PromiseOrValue::Value(x) => x.serialize(writer),
             // The promise is dropped to cause env::promise calls.
             PromiseOrValue::Promise(p) => p.serialize(writer),
+        }
+    }
+}
+
+impl<T: miniserde::Serialize> miniserde::Serialize for PromiseOrValue<T> {
+    fn begin(&self) -> Fragment {
+        match self {
+            // Only actual value is serialized.
+            PromiseOrValue::Value(x) => x.begin(),
+            // The promise is dropped to cause env::promise calls.
+            PromiseOrValue::Promise(p) => p.begin(),
         }
     }
 }

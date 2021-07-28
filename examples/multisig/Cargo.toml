@@ -15,13 +15,10 @@ bs58 = { version = "0.4", default-features = false, features = ["alloc"] }
 base64 = { version = "0.13", default-features = false, features = ["alloc"] }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-serde = { version = "1.0", default-features = false, features = ["alloc", "derive"] }
-serde_json = { version = "1.0", default-features = false, features = ["alloc"] }
+miniserde = { git = "https://github.com/austinabell/miniserde", rev = "07e651132043b0f1442ef315af44feaac102546f", default-features = false }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-serde = { version = "1.0", default-features = false, features = ["alloc", "derive", "std"] }
-serde_json = { version = "1.0", default-features = false, features = ["std", "alloc"] }
-
+miniserde = { git = "https://github.com/austinabell/miniserde", rev = "07e651132043b0f1442ef315af44feaac102546f", default-features = false }
 
 [profile.release]
 codegen-units = 1
@@ -30,4 +27,3 @@ opt-level = "z"
 lto = true
 debug = false
 panic = "abort"
-

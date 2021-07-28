@@ -23,49 +23,49 @@ macro_rules! impl_str_type {
             }
         }
 
-        impl serde::Serialize for $iden {
-            fn serialize<S>(
-                &self,
-                serializer: S,
-            ) -> Result<S::Ok, S::Error>
-            where
-                S: serde::ser::Serializer,
-            {
-                serializer.serialize_str(&self.0.to_string())
+        // impl serde::Serialize for $iden {
+        //     fn serialize<S>(
+        //         &self,
+        //         serializer: S,
+        //     ) -> Result<S::Ok, S::Error>
+        //     where
+        //         S: serde::ser::Serializer,
+        //     {
+        //         serializer.serialize_str(&self.0.to_string())
+        //     }
+        // }
+
+        // impl<'de> serde::Deserialize<'de> for $iden {
+        //     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        //     where
+        //         D: serde::de::Deserializer<'de>,
+        //     {
+        //         let s: alloc::string::String = serde::Deserialize::deserialize(deserializer)?;
+        //         Ok(Self(str::parse::<$ty>(&s).map_err(|err| {
+        //             serde::de::Error::custom(err.to_string())
+        //         })?))
+        //     }
+        // }
+
+        impl miniserde::Serialize for $iden {
+            fn begin(&self) -> miniserde::ser::Fragment {
+                miniserde::ser::Fragment::Str(self.0.to_string().into())
             }
         }
 
-        impl<'de> serde::Deserialize<'de> for $iden {
-            fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-            where
-                D: serde::de::Deserializer<'de>,
-            {
-                let s: alloc::string::String = serde::Deserialize::deserialize(deserializer)?;
-                Ok(Self(str::parse::<$ty>(&s).map_err(|err| {
-                    serde::de::Error::custom(err.to_string())
-                })?))
+        miniserde::make_place!($place);
+        impl miniserde::de::Visitor for $place<$iden> {
+            fn string(&mut self, s: &str) -> miniserde::Result<()> {
+                self.out = Some($iden(str::parse::<$ty>(s).map_err(|_| miniserde::Error)?));
+                Ok(())
             }
         }
 
-        // impl miniserde::Serialize for $iden {
-        //     fn begin(&self) -> miniserde::ser::Fragment {
-        //         miniserde::ser::Fragment::Str(self.0.to_string().into())
-        //     }
-        // }
-
-        // miniserde::make_place!($place);
-        // impl miniserde::de::Visitor for $place<$iden> {
-        //     fn string(&mut self, s: &str) -> miniserde::Result<()> {
-        //         self.out = Some($iden(str::parse::<$ty>(s).map_err(|_| miniserde::Error)?));
-        //         Ok(())
-        //     }
-        // }
-
-        // impl miniserde::Deserialize for $iden {
-        //     fn begin(out: &mut Option<Self>) -> &mut dyn miniserde::de::Visitor {
-        //         $place::new(out)
-        //     }
-        // }
+        impl miniserde::Deserialize for $iden {
+            fn begin(out: &mut Option<Self>) -> &mut dyn miniserde::de::Visitor {
+                $place::new(out)
+            }
+        }
     };
 }
 
@@ -77,7 +77,7 @@ impl_str_type!(I64, i64, P3);
 #[cfg(test)]
 mod tests {
     use super::*;
-    use serde_json as json;
+    use miniserde::json;
 
     macro_rules! test_serde {
         ($str_type: tt, $int_type: tt, $number: expr) => {
@@ -86,7 +86,7 @@ mod tests {
             let b: $int_type = str_a.into();
             assert_eq!(a, b);
 
-            let str: String = json::to_string(&str_a).unwrap();
+            let str: String = json::to_string(&str_a);
             let deser_a: $str_type = json::from_str(&str).unwrap();
             assert_eq!(a, deser_a.0);
         };
