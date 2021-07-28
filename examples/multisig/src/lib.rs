@@ -1,7 +1,10 @@
 //* NO_STD not possible because miniserde requires it (for now)
-// #![cfg_attr(target_arch = "wasm32", no_std)]
+#![cfg_attr(target_arch = "wasm32", no_std)]
 
 mod utils;
+
+#[cfg(target_arch = "wasm32")]
+mod no_std_contract;
 
 extern crate alloc;
 
@@ -9,18 +12,16 @@ use alloc::collections::BTreeSet;
 use alloc::string::String;
 use alloc::vec::Vec;
 use borsh::{self, BorshDeserialize, BorshSerialize};
-use miniserde::de::Visitor;
-use miniserde::ser::Fragment;
-use miniserde::{make_place, Deserialize, Serialize};
+// use miniserde::de::Visitor;
+// use miniserde::ser::Fragment;
+// use miniserde::{make_place, Deserialize, Serialize};
+use serde::{Serialize, Deserialize};
 use nesdie::env;
 use nesdie_collections::legacy_unordered_map::UnorderedMap;
 use utils::json::{Base64VecU8, U128, U64};
 use utils::types::{AccountId, Promise, PromiseOrValue, PublicKey};
 
 use crate::utils::helper_env;
-
-const ERR_DESERIALIZE_INPUT: &str = "failed to deserialize input JSON";
-const ERR_UTF8: &str = "utf8 error";
 
 /// Unlimited allowance for multisig keys.
 const DEFAULT_ALLOWANCE: u128 = 0;
@@ -39,7 +40,7 @@ pub struct FunctionCallPermission {
 }
 
 /// Lowest level action that can be performed by the multisig contract.
-#[derive(Clone, PartialEq, BorshDeserialize, BorshSerialize)]
+#[derive(Clone, PartialEq, BorshDeserialize, BorshSerialize, Serialize, Deserialize)]
 // #[serde(tag = "type", crate = "near_sdk::serde")]
 pub enum MultiSigRequestAction {
     /// Transfers given amount to receiver.
@@ -72,29 +73,29 @@ pub enum MultiSigRequestAction {
     SetActiveRequestsLimit { active_requests_limit: u32 },
 }
 
-impl miniserde::Serialize for MultiSigRequestAction {
-    fn begin(&self) -> Fragment {
-        todo!()
-        // Fragment::Str(base64::encode(&self.0).into())
-    }
-}
+// impl miniserde::Serialize for MultiSigRequestAction {
+//     fn begin(&self) -> Fragment {
+//         todo!()
+//         // Fragment::Str(base64::encode(&self.0).into())
+//     }
+// }
 
-make_place!(Place);
-impl Visitor for Place<MultiSigRequestAction> {
-    fn string(&mut self, _s: &str) -> miniserde::Result<()> {
-        todo!();
-        // self.out = Some(Base64VecU8(
-        //     base64::decode(s).map_err(|_| miniserde::Error)?,
-        // ));
-        // Ok(())
-    }
-}
+// // make_place!(Place);
+// impl Visitor for Place<MultiSigRequestAction> {
+//     fn string(&mut self, _s: &str) -> miniserde::Result<()> {
+//         todo!();
+//         // self.out = Some(Base64VecU8(
+//         //     base64::decode(s).map_err(|_| miniserde::Error)?,
+//         // ));
+//         // Ok(())
+//     }
+// }
 
-impl miniserde::Deserialize for MultiSigRequestAction {
-    fn begin(out: &mut Option<Self>) -> &mut dyn Visitor {
-        Place::new(out)
-    }
-}
+// impl miniserde::Deserialize for MultiSigRequestAction {
+//     fn begin(out: &mut Option<Self>) -> &mut dyn Visitor {
+//         Place::new(out)
+//     }
+// }
 
 // The request the user makes specifying the receiving account and actions they want to execute (1 tx)
 #[derive(Clone, PartialEq, BorshDeserialize, BorshSerialize, Serialize, Deserialize)]
@@ -123,27 +124,7 @@ pub struct MultiSigContract {
     active_requests_limit: u32,
 }
 
-#[no_mangle]
-pub extern "C" fn new() {
-    // helper_env::setup_panic_hook();
-    if env::attached_deposit() != 0 {
-        env::panic_str("Method doesn't accept deposit");
-    }
 
-    #[derive(Serialize, Deserialize)]
-    struct Input {
-        num_confirmations: u32,
-    }
-
-    let input = helper_env::input().unwrap_or_else(|| unreachable!());
-    let Input { num_confirmations } = miniserde::json::from_str(
-        core::str::from_utf8(&input).unwrap_or_else(|_| env::panic_str(ERR_UTF8)),
-    )
-    .unwrap_or_else(|_| env::panic_str(ERR_DESERIALIZE_INPUT));
-
-    let contract = MultiSigContract::new(num_confirmations);
-    helper_env::state_write(&contract);
-}
 
 // // If you haven't initialized the contract with new(num_confirmations: u32)
 // impl Default for MultiSigContract {

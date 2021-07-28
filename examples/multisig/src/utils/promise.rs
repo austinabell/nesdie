@@ -5,6 +5,7 @@ use borsh::maybestd::io::Write;
 use borsh::maybestd::rc::Rc;
 use core::cell::RefCell;
 
+use crate::alloc::vec;
 use crate::alloc::vec::Vec;
 
 pub enum PromiseAction {

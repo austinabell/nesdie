@@ -2,18 +2,26 @@
 name = "multisig"
 version = "0.1.0"
 edition = "2018"
+resolver = "2"
 
 [lib]
 crate-type = ["cdylib"]
 
 [dependencies]
-# Currently need std because of miniserde
-nesdie = { path = "../../", features = ["std"] }
+nesdie = { path = "../../", features = ["oom-handler"] }
 nesdie-collections = { path = "../../collections", features = ["legacy"] }
 borsh = { version = "0.9", default-features = false }
-miniserde = "0.1"
-bs58 = "0.4"
-base64 = "0.13"
+bs58 = { version = "0.4", default-features = false, features = ["alloc"] }
+base64 = { version = "0.13", default-features = false, features = ["alloc"] }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+serde = { version = "1.0", default-features = false, features = ["alloc", "derive"] }
+serde_json = { version = "1.0", default-features = false, features = ["alloc"] }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+serde = { version = "1.0", default-features = false, features = ["alloc", "derive", "std"] }
+serde_json = { version = "1.0", default-features = false, features = ["std", "alloc"] }
+
 
 [profile.release]
 codegen-units = 1

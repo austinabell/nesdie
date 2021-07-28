@@ -2,7 +2,7 @@
 
 use super::types::*;
 use super::{public_key::PublicKey, types::AccountId};
-use crate::alloc::boxed::Box;
+use crate::alloc::vec;
 use crate::alloc::vec::Vec;
 use core::convert::TryFrom;
 use core::mem::size_of;
@@ -11,7 +11,7 @@ use nesdie::{env, sys};
 const ATOMIC_OP_REGISTER: u64 = 0;
 
 /// Register used to record evicted values from the storage.
-const EVICTED_REGISTER: u64 = std::u64::MAX - 1;
+const EVICTED_REGISTER: u64 = core::u64::MAX - 1;
 
 /// Key used to store the state of the contract.
 const STATE_KEY: &[u8] = b"STATE";
@@ -35,18 +35,18 @@ macro_rules! method_into_register {
     }};
 }
 
-/// Implements panic hook that converts `PanicInfo` into a string and provides it through the
-/// blockchain interface.
-fn panic_hook_impl(_info: &core::panic::PanicInfo) {
-    //* All errors from this crate should be handled
-    unreachable!()
-    // nesdie::panic_str(info.to_string());
-}
+// /// Implements panic hook that converts `PanicInfo` into a string and provides it through the
+// /// blockchain interface.
+// fn panic_hook_impl(_info: &core::panic::PanicInfo) {
+//     //* All errors from this crate should be handled
+//     unreachable!()
+//     // nesdie::panic_str(info.to_string());
+// }
 
-/// Setups panic hook to expose error info to the blockchain.
-pub fn setup_panic_hook() {
-    std::panic::set_hook(Box::new(panic_hook_impl));
-}
+// /// Setups panic hook to expose error info to the blockchain.
+// pub fn setup_panic_hook() {
+//     std::panic::set_hook(Box::new(panic_hook_impl));
+// }
 
 /// The input to the contract call serialized as bytes. If input is not provided returns `None`.
 pub fn input() -> Option<Vec<u8>> {

@@ -217,9 +217,17 @@ where
             return;
         }
 
-        let val_a = self.get_mut_inner(a).unwrap_or_else(|| unreachable!()).replace(None);
-        let val_b = self.get_mut_inner(b).unwrap_or_else(|| unreachable!()).replace(val_a);
-        self.get_mut_inner(a).unwrap_or_else(|| unreachable!()).replace(val_b);
+        let val_a = self
+            .get_mut_inner(a)
+            .unwrap_or_else(|| unreachable!())
+            .replace(None);
+        let val_b = self
+            .get_mut_inner(b)
+            .unwrap_or_else(|| unreachable!())
+            .replace(val_a);
+        self.get_mut_inner(a)
+            .unwrap_or_else(|| unreachable!())
+            .replace(val_b);
     }
 
     /// Removes an element from the vector and returns it.
