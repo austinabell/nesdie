@@ -8,7 +8,7 @@ extern crate alloc;
 pub(crate) mod types {
     pub use super::promise::*;
     pub use super::public_key::*;
-    pub type AccountId = super::alloc::vec::Vec<u8>;
+    pub type AccountId = super::alloc::string::String;
     pub type Gas = u64;
     pub type Balance = u128;
     pub type PromiseIndex = u64;

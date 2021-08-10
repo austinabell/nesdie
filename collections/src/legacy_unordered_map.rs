@@ -7,10 +7,7 @@ use borsh::{BorshDeserialize, BorshSerialize};
 use core::mem::size_of;
 use nesdie::env;
 
-extern crate alloc;
-
-use alloc::boxed::Box;
-use alloc::vec::Vec;
+use crate::lib::{Box, Vec};
 
 /// An iterable implementation of a map that stores its content directly on the trie.
 /// * NOTE: This structure is just used for compatibility with old contracts that use this type.

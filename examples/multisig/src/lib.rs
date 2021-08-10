@@ -575,406 +575,324 @@ impl MultiSigContract {
     }
 }
 
-// #[cfg(test)]
-// mod tests {
-//     use std::fmt::{Debug, Error, Formatter};
+#[cfg(not(target_arch = "wasm32"))]
+#[cfg(test)]
+mod tests {
+    use std::fmt::{Debug, Error, Formatter};
 
-//     use near_sdk::{testing_env, MockedBlockchain};
-//     use near_sdk::{AccountId, VMContext};
-//     use near_sdk::{Balance, BlockHeight, EpochHeight};
+    use nesdie::mock::{VMContext, VMContextBuilder};
+    use nesdie::testing_env;
+    use nesdie::Balance;
+    use utils::types::AccountId;
 
-//     use super::*;
+    use super::*;
 
-//     /// Used for asserts_eq.
-//     /// TODO: replace with derive when https://github.com/near/near-sdk-rs/issues/165
-//     impl Debug for MultiSigRequest {
-//         fn fmt(&self, _f: &mut Formatter<'_>) -> Result<(), Error> {
-//             panic!("Should not trigger");
-//         }
-//     }
+    /// Used for asserts_eq.
+    /// TODO: replace with derive when https://github.com/near/near-sdk-rs/issues/165
+    impl Debug for MultiSigRequest {
+        fn fmt(&self, _f: &mut Formatter<'_>) -> Result<(), Error> {
+            panic!("Should not trigger");
+        }
+    }
 
-//     pub fn alice() -> AccountId {
-//         "alice".to_string()
-//     }
-//     pub fn bob() -> AccountId {
-//         "bob".to_string()
-//     }
+    pub fn alice() -> AccountId {
+        "alice".to_string()
+    }
+    pub fn bob() -> AccountId {
+        "bob".to_string()
+    }
 
-//     pub struct VMContextBuilder {
-//         context: VMContext,
-//     }
+    fn context_with_key(key: PublicKey, amount: Balance) -> VMContext {
+        VMContextBuilder::new()
+            .current_account_id(alice())
+            .predecessor_account_id(alice())
+            .signer_account_id(alice())
+            .signer_account_pk(key.into())
+            .account_balance(amount)
+            .build()
+    }
 
-//     impl VMContextBuilder {
-//         pub fn new() -> Self {
-//             Self {
-//                 context: VMContext {
-//                     current_account_id: "".to_string(),
-//                     signer_account_id: "".to_string(),
-//                     signer_account_pk: vec![0, 1, 2],
-//                     predecessor_account_id: "".to_string(),
-//                     input: vec![],
-//                     epoch_height: 0,
-//                     block_index: 0,
-//                     block_timestamp: 0,
-//                     account_balance: 0,
-//                     account_locked_balance: 0,
-//                     storage_usage: 10u64.pow(6),
-//                     attached_deposit: 0,
-//                     prepaid_gas: 10u64.pow(18),
-//                     random_seed: vec![0, 1, 2],
-//                     is_view: false,
-//                     output_data_receivers: vec![],
-//                 },
-//             }
-//         }
+    fn context_with_key_future(key: PublicKey, amount: Balance) -> VMContext {
+        VMContextBuilder::new()
+            .current_account_id(alice())
+            .block_timestamp(REQUEST_COOLDOWN + 1)
+            .predecessor_account_id(alice())
+            .signer_account_id(alice())
+            .signer_account_pk(key.into())
+            .account_balance(amount)
+            .build()
+    }
 
-//         pub fn current_account_id(mut self, account_id: AccountId) -> Self {
-//             self.context.current_account_id = account_id;
-//             self
-//         }
+    fn dummy_public_key() -> PublicKey {
+        "Eg2jtsiMrprn7zgaKUk79qM1hWhANsFyE6JSX4txLEub"
+            .parse()
+            .unwrap()
+    }
 
-//         pub fn block_timestamp(mut self, time: u64) -> Self {
-//             self.context.block_timestamp = time;
-//             self
-//         }
+    #[test]
+    fn test_multi_3_of_n() {
+        let amount = 1_000;
+        testing_env!(context_with_key(
+            "Eg2jtsiMrprn7zgKKUk79qM1hWhANsFyE6JSX4txLEuy"
+                .parse()
+                .unwrap(),
+            amount
+        ));
+        let mut c = MultiSigContract::new(3);
+        let request = MultiSigRequest {
+            receiver_id: bob(),
+            actions: vec![MultiSigRequestAction::Transfer {
+                amount: amount.into(),
+            }],
+        };
+        let request_id = c.add_request(request.clone());
+        assert_eq!(c.get_request(request_id), request);
+        assert_eq!(c.list_request_ids(), vec![request_id]);
+        c.confirm(request_id);
+        assert_eq!(c.requests.len(), 1);
+        assert_eq!(c.confirmations.get(&request_id).unwrap().len(), 1);
+        testing_env!(context_with_key(
+            "HghiythFFPjVXwc9BLNi8uqFmfQc1DWFrJQ4nE6ANo7R"
+                .parse()
+                .unwrap(),
+            amount
+        ));
+        c.confirm(request_id);
+        assert_eq!(c.confirmations.get(&request_id).unwrap().len(), 2);
+        assert_eq!(c.get_confirmations(request_id).len(), 2);
+        testing_env!(context_with_key(
+            "2EfbwnQHPBWQKbNczLiVznFghh9qs716QT71zN6L1D95"
+                .parse()
+                .unwrap(),
+            amount
+        ));
+        c.confirm(request_id);
+        // TODO: confirm that funds were transferred out via promise.
+        assert_eq!(c.requests.len(), 0);
+    }
 
-//         #[allow(dead_code)]
-//         pub fn signer_account_id(mut self, account_id: AccountId) -> Self {
-//             self.context.signer_account_id = account_id;
-//             self
-//         }
+    #[test]
+    fn test_multi_add_request_and_confirm() {
+        let amount = 1_000;
+        testing_env!(context_with_key(
+            "Eg2jtsiMrprn7zgKKUk79qM1hWhANsFyE6JSX4txLEuy"
+                .parse()
+                .unwrap(),
+            amount
+        ));
+        let mut c = MultiSigContract::new(3);
+        let request = MultiSigRequest {
+            receiver_id: bob(),
+            actions: vec![MultiSigRequestAction::Transfer {
+                amount: amount.into(),
+            }],
+        };
+        let request_id = c.add_request_and_confirm(request.clone());
+        assert_eq!(c.get_request(request_id), request);
+        assert_eq!(c.list_request_ids(), vec![request_id]);
+        // c.confirm(request_id);
+        assert_eq!(c.requests.len(), 1);
+        assert_eq!(c.confirmations.get(&request_id).unwrap().len(), 1);
+        testing_env!(context_with_key(
+            "HghiythFFPjVXwc9BLNi8uqFmfQc1DWFrJQ4nE6ANo7R"
+                .parse()
+                .unwrap(),
+            amount
+        ));
+        c.confirm(request_id);
+        assert_eq!(c.confirmations.get(&request_id).unwrap().len(), 2);
+        assert_eq!(c.get_confirmations(request_id).len(), 2);
+        testing_env!(context_with_key(
+            "2EfbwnQHPBWQKbNczLiVznFghh9qs716QT71zN6L1D95"
+                .parse()
+                .unwrap(),
+            amount
+        ));
+        c.confirm(request_id);
+        // TODO: confirm that funds were transferred out via promise.
+        assert_eq!(c.requests.len(), 0);
+    }
 
-//         pub fn signer_account_pk(mut self, signer_account_pk: PublicKey) -> Self {
-//             self.context.signer_account_pk = signer_account_pk;
-//             self
-//         }
+    #[test]
+    fn add_key_delete_key_storage_cleared() {
+        let amount = 1_000;
+        testing_env!(context_with_key(
+            "Eg2jtsiMrprn7zgKKUk79qM1hWhANsFyE6JSX4txLEuy"
+                .parse()
+                .unwrap(),
+            amount
+        ));
+        let mut c = MultiSigContract::new(1);
+        let new_key: PublicKey = "HghiythFFPjVXwc9BLNi8uqFmfQc1DWFrJQ4nE6ANo7R"
+            .parse()
+            .unwrap();
+        // vm current_account_id is alice, receiver_id must be alice
+        let request = MultiSigRequest {
+            receiver_id: alice(),
+            actions: vec![MultiSigRequestAction::AddKey {
+                public_key: new_key.clone(),
+                permission: None,
+            }],
+        };
+        // make request
+        c.add_request_and_confirm(request.clone());
+        // should be empty now
+        assert_eq!(c.requests.len(), 0);
+        // switch accounts
+        testing_env!(context_with_key(
+            "HghiythFFPjVXwc9BLNi8uqFmfQc1DWFrJQ4nE6ANo7R"
+                .parse()
+                .unwrap(),
+            amount
+        ));
+        let request2 = MultiSigRequest {
+            receiver_id: alice(),
+            actions: vec![MultiSigRequestAction::Transfer {
+                amount: amount.into(),
+            }],
+        };
+        // make request but don't confirm
+        c.add_request(request2.clone());
+        // should have 1 request now
+        assert_eq!(c.requests.len(), 1);
+        assert_eq!(c.get_num_requests_pk(new_key.clone()), 1);
+        // self delete key
+        let request3 = MultiSigRequest {
+            receiver_id: alice(),
+            actions: vec![MultiSigRequestAction::DeleteKey {
+                public_key: new_key.clone(),
+            }],
+        };
+        // make request and confirm
+        c.add_request_and_confirm(request3.clone());
+        // should be empty now
+        assert_eq!(c.requests.len(), 0);
+        assert_eq!(c.get_num_requests_pk(new_key.clone()), 0);
+    }
 
-//         pub fn predecessor_account_id(mut self, account_id: AccountId) -> Self {
-//             self.context.predecessor_account_id = account_id;
-//             self
-//         }
+    #[test]
+    #[should_panic]
+    fn test_panics_add_key_different_account() {
+        let amount = 1_000;
+        testing_env!(context_with_key(
+            "Eg2jtsiMrprn7zgKKUk79qM1hWhANsFyE6JSX4txLEuy"
+                .parse()
+                .unwrap(),
+            amount
+        ));
+        let mut c = MultiSigContract::new(1);
+        let new_key: PublicKey = "HghiythFFPjVXwc9BLNi8uqFmfQc1DWFrJQ4nE6ANo7R"
+            .parse()
+            .unwrap();
+        // vm current_account_id is alice, receiver_id must be alice
+        let request = MultiSigRequest {
+            receiver_id: bob(),
+            actions: vec![MultiSigRequestAction::AddKey {
+                public_key: new_key.clone(),
+                permission: None,
+            }],
+        };
+        // make request
+        c.add_request_and_confirm(request);
+    }
 
-//         #[allow(dead_code)]
-//         pub fn block_index(mut self, block_index: BlockHeight) -> Self {
-//             self.context.block_index = block_index;
-//             self
-//         }
+    #[test]
+    fn test_change_num_confirmations() {
+        let amount = 1_000;
+        testing_env!(context_with_key(dummy_public_key(), amount));
+        let mut c = MultiSigContract::new(1);
+        let request_id = c.add_request(MultiSigRequest {
+            receiver_id: alice(),
+            actions: vec![MultiSigRequestAction::SetNumConfirmations {
+                num_confirmations: 2,
+            }],
+        });
+        c.confirm(request_id);
+        assert_eq!(c.num_confirmations, 2);
+    }
 
-//         #[allow(dead_code)]
-//         pub fn epoch_height(mut self, epoch_height: EpochHeight) -> Self {
-//             self.context.epoch_height = epoch_height;
-//             self
-//         }
+    #[test]
+    #[should_panic]
+    fn test_panics_on_second_confirm() {
+        let amount = 1_000;
+        testing_env!(context_with_key(dummy_public_key(), amount));
+        let mut c = MultiSigContract::new(3);
+        let request_id = c.add_request(MultiSigRequest {
+            receiver_id: bob(),
+            actions: vec![MultiSigRequestAction::Transfer {
+                amount: amount.into(),
+            }],
+        });
+        assert_eq!(c.requests.len(), 1);
+        assert_eq!(c.confirmations.get(&request_id).unwrap().len(), 0);
+        c.confirm(request_id);
+        assert_eq!(c.confirmations.get(&request_id).unwrap().len(), 1);
+        c.confirm(request_id);
+    }
 
-//         #[allow(dead_code)]
-//         pub fn attached_deposit(mut self, amount: Balance) -> Self {
-//             self.context.attached_deposit = amount;
-//             self
-//         }
+    #[test]
+    #[should_panic]
+    fn test_panics_delete_request() {
+        let amount = 1_000;
+        testing_env!(context_with_key(dummy_public_key(), amount));
+        let mut c = MultiSigContract::new(3);
+        let request_id = c.add_request(MultiSigRequest {
+            receiver_id: bob(),
+            actions: vec![MultiSigRequestAction::Transfer {
+                amount: amount.into(),
+            }],
+        });
+        c.delete_request(request_id);
+        assert_eq!(c.requests.len(), 0);
+        assert_eq!(c.confirmations.len(), 0);
+    }
 
-//         pub fn account_balance(mut self, amount: Balance) -> Self {
-//             self.context.account_balance = amount;
-//             self
-//         }
+    #[test]
+    fn test_delete_request_future() {
+        let amount = 1_000;
+        testing_env!(context_with_key(dummy_public_key(), amount));
+        let mut c = MultiSigContract::new(3);
+        let request_id = c.add_request(MultiSigRequest {
+            receiver_id: bob(),
+            actions: vec![MultiSigRequestAction::Transfer {
+                amount: amount.into(),
+            }],
+        });
+        testing_env!(context_with_key_future(dummy_public_key(), amount));
+        c.delete_request(request_id);
+        assert_eq!(c.requests.len(), 0);
+        assert_eq!(c.confirmations.len(), 0);
+    }
 
-//         #[allow(dead_code)]
-//         pub fn account_locked_balance(mut self, amount: Balance) -> Self {
-//             self.context.account_locked_balance = amount;
-//             self
-//         }
+    #[test]
+    #[should_panic]
+    fn test_delete_request_panic_wrong_key() {
+        let amount = 1_000;
+        testing_env!(context_with_key(dummy_public_key(), amount));
+        let mut c = MultiSigContract::new(3);
+        let request_id = c.add_request(MultiSigRequest {
+            receiver_id: bob(),
+            actions: vec![MultiSigRequestAction::Transfer {
+                amount: amount.into(),
+            }],
+        });
+        testing_env!(context_with_key(dummy_public_key(), amount));
+        c.delete_request(request_id);
+    }
 
-//         pub fn finish(self) -> VMContext {
-//             self.context
-//         }
-//     }
-
-//     fn context_with_key(key: PublicKey, amount: Balance) -> VMContext {
-//         VMContextBuilder::new()
-//             .current_account_id(alice())
-//             .predecessor_account_id(alice())
-//             .signer_account_id(alice())
-//             .signer_account_pk(key)
-//             .account_balance(amount)
-//             .finish()
-//     }
-
-//     fn context_with_key_future(key: PublicKey, amount: Balance) -> VMContext {
-//         VMContextBuilder::new()
-//             .current_account_id(alice())
-//             .block_timestamp(REQUEST_COOLDOWN + 1)
-//             .predecessor_account_id(alice())
-//             .signer_account_id(alice())
-//             .signer_account_pk(key)
-//             .account_balance(amount)
-//             .finish()
-//     }
-
-//     #[test]
-//     fn test_multi_3_of_n() {
-//         let amount = 1_000;
-//         testing_env!(context_with_key(
-//             PublicKey::try_from("Eg2jtsiMrprn7zgKKUk79qM1hWhANsFyE6JSX4txLEuy")
-//                 .unwrap()
-//                 .into(),
-//             amount
-//         ));
-//         let mut c = MultiSigContract::new(3);
-//         let request = MultiSigRequest {
-//             receiver_id: bob(),
-//             actions: vec![MultiSigRequestAction::Transfer {
-//                 amount: amount.into(),
-//             }],
-//         };
-//         let request_id = c.add_request(request.clone());
-//         assert_eq!(c.get_request(request_id), request);
-//         assert_eq!(c.list_request_ids(), vec![request_id]);
-//         c.confirm(request_id);
-//         assert_eq!(c.requests.len(), 1);
-//         assert_eq!(c.confirmations.get(&request_id).unwrap().len(), 1);
-//         testing_env!(context_with_key(
-//             PublicKey::try_from("HghiythFFPjVXwc9BLNi8uqFmfQc1DWFrJQ4nE6ANo7R")
-//                 .unwrap()
-//                 .into(),
-//             amount
-//         ));
-//         c.confirm(request_id);
-//         assert_eq!(c.confirmations.get(&request_id).unwrap().len(), 2);
-//         assert_eq!(c.get_confirmations(request_id).len(), 2);
-//         testing_env!(context_with_key(
-//             PublicKey::try_from("2EfbwnQHPBWQKbNczLiVznFghh9qs716QT71zN6L1D95")
-//                 .unwrap()
-//                 .into(),
-//             amount
-//         ));
-//         c.confirm(request_id);
-//         // TODO: confirm that funds were transferred out via promise.
-//         assert_eq!(c.requests.len(), 0);
-//     }
-
-//     #[test]
-//     fn test_multi_add_request_and_confirm() {
-//         let amount = 1_000;
-//         testing_env!(context_with_key(
-//             PublicKey::try_from("Eg2jtsiMrprn7zgKKUk79qM1hWhANsFyE6JSX4txLEuy")
-//                 .unwrap()
-//                 .into(),
-//             amount
-//         ));
-//         let mut c = MultiSigContract::new(3);
-//         let request = MultiSigRequest {
-//             receiver_id: bob(),
-//             actions: vec![MultiSigRequestAction::Transfer {
-//                 amount: amount.into(),
-//             }],
-//         };
-//         let request_id = c.add_request_and_confirm(request.clone());
-//         assert_eq!(c.get_request(request_id), request);
-//         assert_eq!(c.list_request_ids(), vec![request_id]);
-//         // c.confirm(request_id);
-//         assert_eq!(c.requests.len(), 1);
-//         assert_eq!(c.confirmations.get(&request_id).unwrap().len(), 1);
-//         testing_env!(context_with_key(
-//             PublicKey::try_from("HghiythFFPjVXwc9BLNi8uqFmfQc1DWFrJQ4nE6ANo7R")
-//                 .unwrap()
-//                 .into(),
-//             amount
-//         ));
-//         c.confirm(request_id);
-//         assert_eq!(c.confirmations.get(&request_id).unwrap().len(), 2);
-//         assert_eq!(c.get_confirmations(request_id).len(), 2);
-//         testing_env!(context_with_key(
-//             PublicKey::try_from("2EfbwnQHPBWQKbNczLiVznFghh9qs716QT71zN6L1D95")
-//                 .unwrap()
-//                 .into(),
-//             amount
-//         ));
-//         c.confirm(request_id);
-//         // TODO: confirm that funds were transferred out via promise.
-//         assert_eq!(c.requests.len(), 0);
-//     }
-
-//     #[test]
-//     fn add_key_delete_key_storage_cleared() {
-//         let amount = 1_000;
-//         testing_env!(context_with_key(
-//             PublicKey::try_from("Eg2jtsiMrprn7zgKKUk79qM1hWhANsFyE6JSX4txLEuy")
-//                 .unwrap()
-//                 .into(),
-//             amount
-//         ));
-//         let mut c = MultiSigContract::new(1);
-//         let new_key: PublicKey =
-//             PublicKey::try_from("HghiythFFPjVXwc9BLNi8uqFmfQc1DWFrJQ4nE6ANo7R")
-//                 .unwrap()
-//                 .into();
-//         // vm current_account_id is alice, receiver_id must be alice
-//         let request = MultiSigRequest {
-//             receiver_id: alice(),
-//             actions: vec![MultiSigRequestAction::AddKey {
-//                 public_key: new_key.clone(),
-//                 permission: None,
-//             }],
-//         };
-//         // make request
-//         c.add_request_and_confirm(request.clone());
-//         // should be empty now
-//         assert_eq!(c.requests.len(), 0);
-//         // switch accounts
-//         testing_env!(context_with_key(
-//             PublicKey::try_from("HghiythFFPjVXwc9BLNi8uqFmfQc1DWFrJQ4nE6ANo7R")
-//                 .unwrap()
-//                 .into(),
-//             amount
-//         ));
-//         let request2 = MultiSigRequest {
-//             receiver_id: alice(),
-//             actions: vec![MultiSigRequestAction::Transfer {
-//                 amount: amount.into(),
-//             }],
-//         };
-//         // make request but don't confirm
-//         c.add_request(request2.clone());
-//         // should have 1 request now
-//         assert_eq!(c.requests.len(), 1);
-//         assert_eq!(c.get_num_requests_pk(new_key.clone()), 1);
-//         // self delete key
-//         let request3 = MultiSigRequest {
-//             receiver_id: alice(),
-//             actions: vec![MultiSigRequestAction::DeleteKey {
-//                 public_key: new_key.clone(),
-//             }],
-//         };
-//         // make request and confirm
-//         c.add_request_and_confirm(request3.clone());
-//         // should be empty now
-//         assert_eq!(c.requests.len(), 0);
-//         assert_eq!(c.get_num_requests_pk(new_key.clone()), 0);
-//     }
-
-//     #[test]
-//     #[should_panic]
-//     fn test_panics_add_key_different_account() {
-//         let amount = 1_000;
-//         testing_env!(context_with_key(
-//             PublicKey::try_from("Eg2jtsiMrprn7zgKKUk79qM1hWhANsFyE6JSX4txLEuy")
-//                 .unwrap()
-//                 .into(),
-//             amount
-//         ));
-//         let mut c = MultiSigContract::new(1);
-//         let new_key: PublicKey =
-//             PublicKey::try_from("HghiythFFPjVXwc9BLNi8uqFmfQc1DWFrJQ4nE6ANo7R")
-//                 .unwrap()
-//                 .into();
-//         // vm current_account_id is alice, receiver_id must be alice
-//         let request = MultiSigRequest {
-//             receiver_id: bob(),
-//             actions: vec![MultiSigRequestAction::AddKey {
-//                 public_key: new_key.clone(),
-//                 permission: None,
-//             }],
-//         };
-//         // make request
-//         c.add_request_and_confirm(request);
-//     }
-
-//     #[test]
-//     fn test_change_num_confirmations() {
-//         let amount = 1_000;
-//         testing_env!(context_with_key(vec![1, 2, 3], amount));
-//         let mut c = MultiSigContract::new(1);
-//         let request_id = c.add_request(MultiSigRequest {
-//             receiver_id: alice(),
-//             actions: vec![MultiSigRequestAction::SetNumConfirmations {
-//                 num_confirmations: 2,
-//             }],
-//         });
-//         c.confirm(request_id);
-//         assert_eq!(c.num_confirmations, 2);
-//     }
-
-//     #[test]
-//     #[should_panic]
-//     fn test_panics_on_second_confirm() {
-//         let amount = 1_000;
-//         testing_env!(context_with_key(vec![5, 7, 9], amount));
-//         let mut c = MultiSigContract::new(3);
-//         let request_id = c.add_request(MultiSigRequest {
-//             receiver_id: bob(),
-//             actions: vec![MultiSigRequestAction::Transfer {
-//                 amount: amount.into(),
-//             }],
-//         });
-//         assert_eq!(c.requests.len(), 1);
-//         assert_eq!(c.confirmations.get(&request_id).unwrap().len(), 0);
-//         c.confirm(request_id);
-//         assert_eq!(c.confirmations.get(&request_id).unwrap().len(), 1);
-//         c.confirm(request_id);
-//     }
-
-//     #[test]
-//     #[should_panic]
-//     fn test_panics_delete_request() {
-//         let amount = 1_000;
-//         testing_env!(context_with_key(vec![5, 7, 9], amount));
-//         let mut c = MultiSigContract::new(3);
-//         let request_id = c.add_request(MultiSigRequest {
-//             receiver_id: bob(),
-//             actions: vec![MultiSigRequestAction::Transfer {
-//                 amount: amount.into(),
-//             }],
-//         });
-//         c.delete_request(request_id);
-//         assert_eq!(c.requests.len(), 0);
-//         assert_eq!(c.confirmations.len(), 0);
-//     }
-
-//     #[test]
-//     fn test_delete_request_future() {
-//         let amount = 1_000;
-//         testing_env!(context_with_key(vec![5, 7, 9], amount));
-//         let mut c = MultiSigContract::new(3);
-//         let request_id = c.add_request(MultiSigRequest {
-//             receiver_id: bob(),
-//             actions: vec![MultiSigRequestAction::Transfer {
-//                 amount: amount.into(),
-//             }],
-//         });
-//         testing_env!(context_with_key_future(vec![5, 7, 9], amount));
-//         c.delete_request(request_id);
-//         assert_eq!(c.requests.len(), 0);
-//         assert_eq!(c.confirmations.len(), 0);
-//     }
-
-//     #[test]
-//     #[should_panic]
-//     fn test_delete_request_panic_wrong_key() {
-//         let amount = 1_000;
-//         testing_env!(context_with_key(vec![5, 7, 9], amount));
-//         let mut c = MultiSigContract::new(3);
-//         let request_id = c.add_request(MultiSigRequest {
-//             receiver_id: bob(),
-//             actions: vec![MultiSigRequestAction::Transfer {
-//                 amount: amount.into(),
-//             }],
-//         });
-//         testing_env!(context_with_key(vec![1, 2, 3], amount));
-//         c.delete_request(request_id);
-//     }
-
-//     #[test]
-//     #[should_panic]
-//     fn test_too_many_requests() {
-//         let amount = 1_000;
-//         testing_env!(context_with_key(vec![5, 7, 9], amount));
-//         let mut c = MultiSigContract::new(3);
-//         for _i in 0..16 {
-//             c.add_request(MultiSigRequest {
-//                 receiver_id: bob(),
-//                 actions: vec![MultiSigRequestAction::Transfer {
-//                     amount: amount.into(),
-//                 }],
-//             });
-//         }
-//     }
-// }
+    #[test]
+    #[should_panic]
+    fn test_too_many_requests() {
+        let amount = 1_000;
+        testing_env!(context_with_key(dummy_public_key(), amount));
+        let mut c = MultiSigContract::new(3);
+        for _i in 0..16 {
+            c.add_request(MultiSigRequest {
+                receiver_id: bob(),
+                actions: vec![MultiSigRequestAction::Transfer {
+                    amount: amount.into(),
+                }],
+            });
+        }
+    }
+}

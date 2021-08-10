@@ -109,7 +109,7 @@ fn assert_valid_account_id(bytes: Vec<u8>) -> AccountId {
     if !is_valid_account_id(&bytes) {
         env::panic_str("invalid account id");
     }
-    bytes
+    AccountId::from_utf8(bytes).unwrap_or_else(|_| unreachable!())
 }
 
 /// Writes key-value into storage.
@@ -181,13 +181,12 @@ pub fn state_exists() -> bool {
 // Creates a promise that will execute a method on account with given arguments and attaches
 /// the given amount and gas.
 pub fn promise_create(
-    account_id: AccountId,
+    account_id: &str,
     method_name: &[u8],
     arguments: &[u8],
     amount: Balance,
     gas: Gas,
 ) -> PromiseIndex {
-    let account_id = account_id.as_slice();
     unsafe {
         sys::promise_create(
             account_id.len() as _,
@@ -205,13 +204,12 @@ pub fn promise_create(
 /// Attaches the callback that is executed after promise pointed by `promise_idx` is complete.
 pub fn promise_then(
     promise_idx: PromiseIndex,
-    account_id: AccountId,
+    account_id: &str,
     method_name: &[u8],
     arguments: &[u8],
     amount: Balance,
     gas: Gas,
 ) -> PromiseIndex {
-    let account_id = account_id.as_slice();
     unsafe {
         sys::promise_then(
             promise_idx,
@@ -237,11 +235,11 @@ pub fn promise_and(promise_indices: &[PromiseIndex]) -> PromiseIndex {
     unsafe { sys::promise_and(data.as_ptr() as _, promise_indices.len() as _) }
 }
 
-pub fn promise_batch_create(account_id: &[u8]) -> PromiseIndex {
+pub fn promise_batch_create(account_id: &str) -> PromiseIndex {
     unsafe { sys::promise_batch_create(account_id.len() as _, account_id.as_ptr() as _) }
 }
 
-pub fn promise_batch_then(promise_index: PromiseIndex, account_id: &[u8]) -> PromiseIndex {
+pub fn promise_batch_then(promise_index: PromiseIndex, account_id: &str) -> PromiseIndex {
     unsafe {
         sys::promise_batch_then(
             promise_index,
@@ -322,7 +320,7 @@ pub fn promise_batch_action_add_key_with_function_call(
     public_key: &PublicKey,
     nonce: u64,
     allowance: Balance,
-    receiver_id: &[u8],
+    receiver_id: &str,
     method_names: &[u8],
 ) {
     unsafe {
@@ -349,10 +347,7 @@ pub fn promise_batch_action_delete_key(promise_index: PromiseIndex, public_key: 
     }
 }
 
-pub fn promise_batch_action_delete_account(
-    promise_index: PromiseIndex,
-    beneficiary_id: &[u8],
-) {
+pub fn promise_batch_action_delete_account(promise_index: PromiseIndex, beneficiary_id: &str) {
     unsafe {
         sys::promise_batch_action_delete_account(
             promise_index,

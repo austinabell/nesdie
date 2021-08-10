@@ -8,10 +8,7 @@ pub(crate) use self::stable_map::StableMap;
 
 use nesdie::sys;
 
-extern crate alloc;
-
-use alloc::vec;
-use alloc::vec::Vec;
+use crate::lib::Vec;
 
 const ATOMIC_OP_REGISTER: u64 = 0;
 

@@ -1,9 +1,4 @@
-use core::cell::RefCell;
-
-extern crate alloc;
-
-use alloc::boxed::Box;
-use alloc::collections::BTreeMap;
+use crate::lib::{Box, BTreeMap, RefCell};
 
 pub(crate) struct StableMap<K, V> {
     map: RefCell<BTreeMap<K, Box<V>>>,
