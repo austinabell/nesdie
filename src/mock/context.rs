@@ -1,5 +1,8 @@
-use crate::lib::{String, Vec};
+extern crate alloc;
+
 use crate::{Balance, Gas};
+use alloc::string::String;
+use alloc::vec::Vec;
 
 use near_vm_logic::VMContext;
 

@@ -10,6 +10,7 @@ pub use vec::Vector;
 #[cfg(feature = "legacy")]
 pub mod legacy_unordered_map;
 
+#[macro_use]
 extern crate alloc;
 
 mod lib {

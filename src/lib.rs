@@ -52,11 +52,6 @@ fn panic(info: &core::panic::PanicInfo) -> ! {
     }
 }
 
-extern crate alloc;
-
-/// A facade around all the types we need from the `std`, `core`, and `alloc`
-/// crates. This avoids elaborate import wrangling having to happen in every
-/// module.
 mod lib {
     mod core {
         pub use core::*;
@@ -74,13 +69,13 @@ mod lib {
     pub use self::core::result::{self, Result};
     pub use self::core::{borrow, char, cmp, iter, mem, num, ops, slice, str};
 
-    pub use alloc::borrow::{Cow, ToOwned};
+    // pub use alloc::borrow::{Cow, ToOwned};
 
-    pub use alloc::string::{String, ToString};
+    // pub use alloc::string::{String, ToString};
 
-    pub use alloc::vec::{self, Vec};
+    // pub use alloc::vec::{self, Vec};
 
-    pub use alloc::boxed::Box;
+    // pub use alloc::boxed::Box;
 
-    pub use alloc::collections::{btree_map, BTreeMap};
+    // pub use alloc::collections::{btree_map, BTreeMap};
 }
