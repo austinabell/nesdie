@@ -43,7 +43,6 @@ pub struct FunctionCallPermission {
 
 /// Lowest level action that can be performed by the multisig contract.
 #[derive(Clone, PartialEq, BorshDeserialize, BorshSerialize)]
-// #[serde(tag = "type", crate = "near_sdk::serde")]
 pub enum MultiSigRequestAction {
     /// Transfers given amount to receiver.
     Transfer { amount: U128 },
@@ -580,7 +579,7 @@ impl MultiSigContract {
 mod tests {
     use std::fmt::{Debug, Error, Formatter};
 
-    use nesdie::mock::{VMContext, VMContextBuilder};
+    use nesdie::mock::{VMContext, VmContextBuilder};
     use nesdie::testing_env;
     use nesdie::Balance;
     use utils::types::AccountId;
@@ -603,7 +602,7 @@ mod tests {
     }
 
     fn context_with_key(key: PublicKey, amount: Balance) -> VMContext {
-        VMContextBuilder::new()
+        VmContextBuilder::new()
             .current_account_id(alice())
             .predecessor_account_id(alice())
             .signer_account_id(alice())
@@ -613,7 +612,7 @@ mod tests {
     }
 
     fn context_with_key_future(key: PublicKey, amount: Balance) -> VMContext {
-        VMContextBuilder::new()
+        VmContextBuilder::new()
             .current_account_id(alice())
             .block_timestamp(REQUEST_COOLDOWN + 1)
             .predecessor_account_id(alice())

@@ -13,18 +13,18 @@ type EpochHeight = u64;
 
 /// Simple VMContext builder that allows to quickly create custom context in tests.
 #[derive(Clone)]
-pub struct VMContextBuilder {
+pub struct VmContextBuilder {
     context: VMContext,
 }
 
-impl Default for VMContextBuilder {
+impl Default for VmContextBuilder {
     fn default() -> Self {
         Self::new()
     }
 }
 
 #[allow(missing_docs)]
-impl VMContextBuilder {
+impl VmContextBuilder {
     pub fn new() -> Self {
         Self {
             context: VMContext {
@@ -49,22 +49,22 @@ impl VMContextBuilder {
     }
 
     pub fn current_account_id(&mut self, account_id: AccountId) -> &mut Self {
-        self.context.current_account_id = account_id.into();
+        self.context.current_account_id = account_id;
         self
     }
 
     pub fn signer_account_id(&mut self, account_id: AccountId) -> &mut Self {
-        self.context.signer_account_id = account_id.into();
+        self.context.signer_account_id = account_id;
         self
     }
 
     pub fn signer_account_pk(&mut self, pk: PublicKey) -> &mut Self {
-        self.context.signer_account_pk = pk.into();
+        self.context.signer_account_pk = pk;
         self
     }
 
     pub fn predecessor_account_id(&mut self, account_id: AccountId) -> &mut Self {
-        self.context.predecessor_account_id = account_id.into();
+        self.context.predecessor_account_id = account_id;
         self
     }
 

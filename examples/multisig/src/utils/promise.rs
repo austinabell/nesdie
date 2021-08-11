@@ -367,7 +367,7 @@ impl Promise {
     /// that should be considered as a return value.
     ///
     /// In the below code `a1` and `a2` functions are equivalent.
-    /// ```
+    /// ```ignore
     /// # use near_sdk::{ext_contract, Gas, near_bindgen, Promise};
     /// # use borsh::{BorshDeserialize, BorshSerialize};
     /// #[ext_contract]

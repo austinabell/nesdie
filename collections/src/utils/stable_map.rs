@@ -1,4 +1,4 @@
-use crate::lib::{Box, BTreeMap, RefCell};
+use crate::lib::{BTreeMap, Box, RefCell};
 
 pub(crate) struct StableMap<K, V> {
     map: RefCell<BTreeMap<K, Box<V>>>,

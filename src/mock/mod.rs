@@ -6,11 +6,12 @@ mod receipt;
 pub(crate) use self::external::SdkExternal;
 pub use self::mocked_blockchain::MockedBlockchain;
 pub use self::receipt::{Receipt, VmAction};
-pub use context::VMContextBuilder;
+pub use context::VmContextBuilder;
 use core::cell::RefCell;
 
 // TODO I'd like to remove this export
-pub use near_vm_logic::VMContext;
+pub use near_primitives_core::runtime::fees::RuntimeFeesConfig;
+pub use near_vm_logic::{VMConfig, VMContext};
 
 thread_local! {
     /// Low-level blockchain interface wrapped by the environment. Prefer using `env::*` and
@@ -41,14 +42,13 @@ thread_local! {
 /// # Example use
 ///
 /// ```
-/// use near_sdk::testing_env;
-/// use near_sdk::test_utils::{accounts, VMContextBuilder};
-/// use near_sdk::{VMConfig, RuntimeFeesConfig};
+/// use nesdie::testing_env;
+/// use nesdie::mock::{VMConfig, VmContextBuilder, RuntimeFeesConfig};
 /// use std::collections::HashMap;
 ///
 /// # fn main() {
 /// // Initializing some context is required
-/// let context = VMContextBuilder::new().signer_account_id(accounts(0)).build();
+/// let context = VmContextBuilder::new().build();
 ///
 /// // Build with just the base context
 /// testing_env!(context.clone());

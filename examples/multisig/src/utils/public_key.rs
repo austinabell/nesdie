@@ -61,7 +61,7 @@ impl core::str::FromStr for CurveType {
 ///
 /// # Example
 /// ```
-/// use near_sdk::PublicKey;
+/// use nesdie::PublicKey;
 ///
 /// // Compressed ed25519 key
 /// let ed: PublicKey = "ed25519:6E8sCci9badyRkXb3JoRpBj5p8C6Tw41ELDZoiihKEtp".parse()
