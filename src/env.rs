@@ -11,6 +11,9 @@ const EVICTED_REGISTER: u64 = core::u64::MAX - 1;
 /// Key used to store the state of the contract.
 const STATE_KEY: &[u8] = b"STATE";
 
+/// Index for a batch promise from within the runtime. Used to combine promises within a contract.
+pub struct PromiseIndex(u64);
+
 fn sys_panic() -> ! {
     unsafe { sys::panic() }
 }
@@ -242,6 +245,208 @@ pub fn state_write_raw(data: &[u8]) {
 /// Returns `true` if the contract state exists and `false` otherwise.
 pub fn state_exists() -> bool {
     storage_has_key(STATE_KEY)
+}
+
+//* Promises
+
+// Creates a promise that will execute a method on account with given arguments and attaches
+/// the given amount and gas.
+pub fn promise_create(
+    account_id: &str,
+    method_name: &str,
+    arguments: &[u8],
+    amount: Balance,
+    gas: Gas,
+) -> PromiseIndex {
+    unsafe {
+        PromiseIndex(sys::promise_create(
+            account_id.len() as _,
+            account_id.as_ptr() as _,
+            method_name.len() as _,
+            method_name.as_ptr() as _,
+            arguments.len() as _,
+            arguments.as_ptr() as _,
+            &amount as *const Balance as _,
+            gas,
+        ))
+    }
+}
+
+/// Attaches the callback that is executed after promise pointed by `promise_idx` is complete.
+pub fn promise_then(
+    promise_idx: PromiseIndex,
+    account_id: &str,
+    method_name: &str,
+    arguments: &[u8],
+    amount: Balance,
+    gas: Gas,
+) -> PromiseIndex {
+    unsafe {
+        PromiseIndex(sys::promise_then(
+            promise_idx.0,
+            account_id.len() as _,
+            account_id.as_ptr() as _,
+            method_name.len() as _,
+            method_name.as_ptr() as _,
+            arguments.len() as _,
+            arguments.as_ptr() as _,
+            &amount as *const Balance as _,
+            gas,
+        ))
+    }
+}
+
+// TODO consider API, currently requires alloc
+// /// Creates a new promise which completes when time all promises passed as arguments complete.
+// pub fn promise_and(promise_indices: &[PromiseIndex]) -> PromiseIndex {
+//     let mut data = vec![0u8; promise_indices.len() * size_of::<PromiseIndex>()];
+//     for i in 0..promise_indices.len() {
+//         data[i * size_of::<PromiseIndex>()..(i + 1) * size_of::<PromiseIndex>()]
+//             .copy_from_slice(&promise_indices[i].to_le_bytes());
+//     }
+//     unsafe {
+//         PromiseIndex(sys::promise_and(
+//             data.as_ptr() as _,
+//             promise_indices.len() as _,
+//         ))
+//     }
+// }
+
+/// Create a batch promise and return the index of that promise.
+pub fn promise_batch_create(account_id: &str) -> PromiseIndex {
+    unsafe {
+        PromiseIndex(sys::promise_batch_create(
+            account_id.len() as _,
+            account_id.as_ptr() as _,
+        ))
+    }
+}
+
+/// Schedule a promise after the provided promise index.
+pub fn promise_batch_then(promise_index: PromiseIndex, account_id: &str) -> PromiseIndex {
+    unsafe {
+        PromiseIndex(sys::promise_batch_then(
+            promise_index.0,
+            account_id.len() as _,
+            account_id.as_ptr() as _,
+        ))
+    }
+}
+
+/// Create account with the batch promise.
+pub fn promise_batch_action_create_account(promise_index: PromiseIndex) {
+    unsafe { sys::promise_batch_action_create_account(promise_index.0) }
+}
+
+/// Deploy contract with the batch promise.
+pub fn promise_batch_action_deploy_contract(promise_index: u64, code: &[u8]) {
+    unsafe {
+        sys::promise_batch_action_deploy_contract(
+            promise_index,
+            code.len() as _,
+            code.as_ptr() as _,
+        )
+    }
+}
+
+/// Call a function within the batch promise.
+pub fn promise_batch_action_function_call(
+    promise_index: PromiseIndex,
+    method_name: &str,
+    arguments: &[u8],
+    amount: Balance,
+    gas: Gas,
+) {
+    unsafe {
+        sys::promise_batch_action_function_call(
+            promise_index.0,
+            method_name.len() as _,
+            method_name.as_ptr() as _,
+            arguments.len() as _,
+            arguments.as_ptr() as _,
+            &amount as *const Balance as _,
+            gas,
+        )
+    }
+}
+
+/// Transfer tokens with the promise.
+pub fn promise_batch_action_transfer(promise_index: PromiseIndex, amount: Balance) {
+    unsafe { sys::promise_batch_action_transfer(promise_index.0, &amount as *const Balance as _) }
+}
+
+/// Stake tokens with the promise.
+pub fn promise_batch_action_stake(promise_index: PromiseIndex, amount: Balance, public_key: &[u8]) {
+    unsafe {
+        sys::promise_batch_action_stake(
+            promise_index.0,
+            &amount as *const Balance as _,
+            public_key.len() as _,
+            public_key.as_ptr() as _,
+        )
+    }
+}
+
+/// Add full access key with batch promise.
+pub fn promise_batch_action_add_key_with_full_access(
+    promise_index: PromiseIndex,
+    public_key: &[u8],
+    nonce: u64,
+) {
+    unsafe {
+        sys::promise_batch_action_add_key_with_full_access(
+            promise_index.0,
+            public_key.len() as _,
+            public_key.as_ptr() as _,
+            nonce,
+        )
+    }
+}
+
+/// Add access key with only function call priviledges
+pub fn promise_batch_action_add_key_with_function_call(
+    promise_index: PromiseIndex,
+    public_key: &[u8],
+    nonce: u64,
+    allowance: Balance,
+    receiver_id: &str,
+    method_names: &str,
+) {
+    unsafe {
+        sys::promise_batch_action_add_key_with_function_call(
+            promise_index.0,
+            public_key.len() as _,
+            public_key.as_ptr() as _,
+            nonce,
+            &allowance as *const Balance as _,
+            receiver_id.len() as _,
+            receiver_id.as_ptr() as _,
+            method_names.len() as _,
+            method_names.as_ptr() as _,
+        )
+    }
+}
+
+/// Delete access key with batch promise.
+pub fn promise_batch_action_delete_key(promise_index: PromiseIndex, public_key: &[u8]) {
+    unsafe {
+        sys::promise_batch_action_delete_key(
+            promise_index.0,
+            public_key.len() as _,
+            public_key.as_ptr() as _,
+        )
+    }
+}
+
+/// Delete account with batch promise.
+pub fn promise_batch_action_delete_account(promise_index: PromiseIndex, beneficiary_id: &str) {
+    unsafe {
+        sys::promise_batch_action_delete_account(
+            promise_index.0,
+            beneficiary_id.len() as _,
+            beneficiary_id.as_ptr() as _,
+        )
+    }
 }
 
 // #####################################
