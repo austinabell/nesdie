@@ -23,7 +23,7 @@ pub mod sys;
 pub mod mock;
 
 mod types;
-pub use self::types::{Balance, Gas};
+pub use self::types::{Balance, Gas, AccountId};
 
 // Set up global allocator by default if wee_alloc feature is enabled and in wasm32 architecture.
 #[cfg(all(feature = "wee_alloc", target_arch = "wasm32"))]

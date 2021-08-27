@@ -1,4 +1,4 @@
-use crate::{sys, Balance, Gas};
+use crate::{sys, AccountId, Balance, Gas};
 use core::mem::size_of;
 
 /// Register used internally for atomic operations. This register is safe to use by the user,
@@ -11,8 +11,27 @@ const EVICTED_REGISTER: u64 = core::u64::MAX - 1;
 /// Key used to store the state of the contract.
 const STATE_KEY: &[u8] = b"STATE";
 
+// fn expect_register<T>(option: Option<T>) -> T {
+//     option.unwrap_or_else(|| sys_panic())
+// }
+
+/// A simple macro helper to read blob value coming from host's method.
+macro_rules! try_method_into_register {
+    ( $method:ident, $v:expr ) => {{
+        unsafe { sys::$method(ATOMIC_OP_REGISTER) };
+        read_register(ATOMIC_OP_REGISTER, $v).unwrap_or_else(|_| sys_panic());
+    }};
+}
+
+/// Same as `try_method_into_register` but expects the data.
+macro_rules! method_into_register {
+    ( $method:ident, $v:expr ) => {{
+        try_method_into_register!($method, $v);
+    }};
+}
+
 /// Index for a batch promise from within the runtime. Used to combine promises within a contract.
-pub struct PromiseIndex(u64);
+pub struct PromiseIndex(pub u64);
 
 fn sys_panic() -> ! {
     unsafe { sys::panic() }
@@ -43,6 +62,14 @@ pub fn register_len(register_id: u64) -> Option<u64> {
 // ###############
 // # Context API #
 // ###############
+
+// TODO eval this API before releasing
+/// The id of the account that owns the current contract.
+pub fn current_account_id() -> AccountId {
+    let mut a = AccountId::new();
+    method_into_register!(current_account_id, unsafe { a.as_bytes_mut() });
+    a
+}
 
 /// Current block index.
 pub fn block_index() -> u64 {
