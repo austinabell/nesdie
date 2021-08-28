@@ -1,3 +1,4 @@
+use crate::types::Vec;
 use crate::{sys, AccountId, Balance, Gas};
 use core::mem::size_of;
 
@@ -19,14 +20,14 @@ const STATE_KEY: &[u8] = b"STATE";
 macro_rules! try_method_into_register {
     ( $method:ident, $v:expr ) => {{
         unsafe { sys::$method(ATOMIC_OP_REGISTER) };
-        read_register(ATOMIC_OP_REGISTER, $v).unwrap_or_else(|_| sys_panic());
+        read_register(ATOMIC_OP_REGISTER, $v).unwrap_or_else(|_| sys_panic())
     }};
 }
 
 /// Same as `try_method_into_register` but expects the data.
 macro_rules! method_into_register {
     ( $method:ident, $v:expr ) => {{
-        try_method_into_register!($method, $v);
+        try_method_into_register!($method, $v)
     }};
 }
 
@@ -66,9 +67,14 @@ pub fn register_len(register_id: u64) -> Option<u64> {
 // TODO eval this API before releasing
 /// The id of the account that owns the current contract.
 pub fn current_account_id() -> AccountId {
-    let mut a = AccountId::new();
-    method_into_register!(current_account_id, unsafe { a.as_bytes_mut() });
-    a
+    let mut a = Vec::<u8, 64>::new();
+    let len = method_into_register!(current_account_id, a.as_mut());
+    // Update length for size written
+    unsafe {
+        a.set_len(len);
+        // Fine to cast as account id, should be validated by runtime
+        AccountId::new_raw(a)
+    }
 }
 
 /// Current block index.

@@ -1,4 +1,5 @@
 mod heapless;
+pub(crate) use self::heapless::Vec;
 
 /// Token denomination type.
 pub type Balance = u128;

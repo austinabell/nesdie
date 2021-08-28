@@ -27,6 +27,10 @@ impl<const N: usize> String<N> {
         Self { vec: Vec::new() }
     }
 
+    pub(crate) unsafe fn new_raw(vec: Vec<u8, N>) -> Self {
+        Self { vec }
+    }
+
     /// Converts a `String` into a byte vector.
     ///
     /// This consumes the `String`, so we do not need to copy its contents.
