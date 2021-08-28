@@ -14,8 +14,7 @@ impl<const N: usize> String<N> {
     ///
     /// Basic usage:
     ///
-    /// ```
-    /// use heapless::String;
+    /// ```ignore
     ///
     /// // allocate the string on the stack
     /// let mut s: String<4> = String::new();
@@ -36,8 +35,7 @@ impl<const N: usize> String<N> {
     ///
     /// Basic usage:
     ///
-    /// ```
-    /// use heapless::String;
+    /// ```ignore
     ///
     /// let s: String<4> = String::from("ab");
     /// let b = s.into_bytes();
@@ -56,8 +54,7 @@ impl<const N: usize> String<N> {
     ///
     /// Basic usage:
     ///
-    /// ```
-    /// use heapless::String;
+    /// ```ignore
     ///
     /// let mut s: String<4> = String::from("ab");
     /// assert!(s.as_str() == "ab");
@@ -76,8 +73,7 @@ impl<const N: usize> String<N> {
     ///
     /// Basic usage:
     ///
-    /// ```
-    /// use heapless::String;
+    /// ```ignore
     ///
     /// let mut s: String<4> = String::from("ab");
     /// let s = s.as_mut_str();
@@ -122,8 +118,7 @@ impl<const N: usize> String<N> {
     ///
     /// Basic usage:
     ///
-    /// ```
-    /// use heapless::String;
+    /// ```ignore
     ///
     /// let mut s: String<8> = String::from("foo");
     ///
@@ -144,8 +139,7 @@ impl<const N: usize> String<N> {
     ///
     /// Basic usage:
     ///
-    /// ```
-    /// use heapless::String;
+    /// ```ignore
     ///
     /// let mut s: String<4> = String::new();
     /// assert!(s.capacity() == 4);
@@ -163,8 +157,7 @@ impl<const N: usize> String<N> {
     ///
     /// Basic usage:
     ///
-    /// ```
-    /// use heapless::String;
+    /// ```ignore
     ///
     /// let mut s: String<8> = String::from("abc");
     ///
@@ -204,8 +197,7 @@ impl<const N: usize> String<N> {
     ///
     /// Basic usage:
     ///
-    /// ```
-    /// use heapless::String;
+    /// ```ignore
     ///
     /// let mut s: String<8> = String::from("hello");
     ///
@@ -231,8 +223,7 @@ impl<const N: usize> String<N> {
     ///
     /// Basic usage:
     ///
-    /// ```
-    /// use heapless::String;
+    /// ```ignore
     ///
     /// let mut s: String<8> = String::from("foo");
     ///
@@ -264,8 +255,7 @@ impl<const N: usize> String<N> {
     ///
     /// Basic usage:
     ///
-    /// ```
-    /// use heapless::String;
+    /// ```ignore
     ///
     /// let mut s: String<8> = String::from("foo");
     ///

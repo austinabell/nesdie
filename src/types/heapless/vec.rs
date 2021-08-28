@@ -4,8 +4,7 @@ use core::{cmp::Ordering, fmt, hash, iter::FromIterator, mem::MaybeUninit, ops, 
 ///
 /// # Examples
 ///
-/// ```
-/// use heapless::Vec;
+/// ```ignore
 ///
 ///
 /// // A vector with a fixed capacity of 8 elements allocated on the stack
@@ -41,8 +40,7 @@ impl<T, const N: usize> Vec<T, N> {
     ///
     /// # Examples
     ///
-    /// ```
-    /// use heapless::Vec;
+    /// ```ignore
     ///
     /// // allocate the vector on the stack
     /// let mut x: Vec<u8, 16> = Vec::new();
@@ -66,8 +64,7 @@ impl<T, const N: usize> Vec<T, N> {
     ///
     /// This is equivalent to the following code:
     ///
-    /// ```
-    /// use heapless::Vec;
+    /// ```ignore
     ///
     /// let mut v: Vec<u8, 16> = Vec::new();
     /// v.extend_from_slice(&[1, 2, 3]).unwrap();
@@ -98,8 +95,7 @@ impl<T, const N: usize> Vec<T, N> {
     ///
     /// # Examples
     ///
-    /// ```
-    /// use heapless::Vec;
+    /// ```ignore
     /// let buffer: Vec<u8, 5> = Vec::from_slice(&[1, 2, 3, 5, 8]).unwrap();
     /// assert_eq!(buffer.as_slice(), &[1, 2, 3, 5, 8]);
     /// ```
@@ -114,8 +110,7 @@ impl<T, const N: usize> Vec<T, N> {
     ///
     /// # Examples
     ///
-    /// ```
-    /// use heapless::Vec;
+    /// ```ignore
     /// let buffer: Vec<u8, 42> = Vec::from_slice(&[1, 2, 3, 5, 8]).unwrap();
     /// let array: [u8; 5] = buffer.into_array().unwrap();
     /// assert_eq!(array, [1, 2, 3, 5, 8]);
@@ -141,8 +136,7 @@ impl<T, const N: usize> Vec<T, N> {
     ///
     /// # Examples
     ///
-    /// ```
-    /// use heapless::Vec;
+    /// ```ignore
     /// let mut buffer: Vec<u8, 5> = Vec::from_slice(&[1, 2, 3, 5, 8]).unwrap();
     /// buffer[0] = 9;
     /// assert_eq!(buffer.as_slice(), &[9, 2, 3, 5, 8]);
@@ -184,8 +178,7 @@ impl<T, const N: usize> Vec<T, N> {
     ///
     /// # Examples
     ///
-    /// ```
-    /// use heapless::Vec;
+    /// ```ignore
     ///
     /// let mut vec = Vec::<u8, 8>::new();
     /// vec.push(1).unwrap();
@@ -333,9 +326,8 @@ impl<T, const N: usize> Vec<T, N> {
     /// This method can be useful for situations in which the vector
     /// is serving as a buffer for other code, particularly over FFI:
     ///
-    /// ```no_run
+    /// ```ignore
     /// # #![allow(dead_code)]
-    /// use heapless::Vec;
     ///
     /// # // This is just a minimal skeleton for the doc example;
     /// # // don't use this as a starting point for a real library.
@@ -375,9 +367,8 @@ impl<T, const N: usize> Vec<T, N> {
     /// While the following example is sound, there is a memory leak since
     /// the inner vectors were not freed prior to the `set_len` call:
     ///
-    /// ```
+    /// ```ignore
     /// use core::iter::FromIterator;
-    /// use heapless::Vec;
     ///
     /// let mut vec = Vec::<Vec<u8, 3>, 3>::from_iter(
     ///     [
@@ -416,9 +407,7 @@ impl<T, const N: usize> Vec<T, N> {
     ///
     /// # Examples
     ///
-    /// ```
-    /// use heapless::Vec;
-    ///// use heapless::consts::*;
+    /// ```ignore
     ///
     /// let mut v: Vec<_, 8> = Vec::new();
     /// v.push("foo").unwrap();
@@ -449,8 +438,7 @@ impl<T, const N: usize> Vec<T, N> {
     ///
     /// # Examples
     ///
-    /// ```
-    /// use heapless::Vec;
+    /// ```ignore
     ///
     /// let mut v: Vec<_, 8> = Vec::new();
     /// v.push("foo").unwrap();
@@ -492,8 +480,7 @@ impl<T, const N: usize> Vec<T, N> {
     ///
     /// # Examples
     ///
-    /// ```
-    /// use heapless::Vec;
+    /// ```ignore
     ///
     /// let v: Vec<_, 8> = Vec::from_slice(b"abc").unwrap();
     /// assert_eq!(v.starts_with(b""), true);
@@ -515,8 +502,7 @@ impl<T, const N: usize> Vec<T, N> {
     ///
     /// # Examples
     ///
-    /// ```
-    /// use heapless::Vec;
+    /// ```ignore
     ///
     /// let v: Vec<_, 8> = Vec::from_slice(b"abc").unwrap();
     /// assert_eq!(v.ends_with(b""), true);
