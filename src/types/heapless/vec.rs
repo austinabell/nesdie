@@ -697,7 +697,7 @@ where
     A: PartialEq<B>,
 {
     fn eq(&self, other: &[B]) -> bool {
-        <[A]>::eq(self, &other[..])
+        <[A]>::eq(self, other)
     }
 }
 

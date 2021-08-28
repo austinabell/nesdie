@@ -11,6 +11,7 @@ pub struct Assert<const L: usize, const R: usize>;
 #[allow(dead_code)]
 #[allow(path_statements)]
 pub(crate) const fn greater_than_0<const N: usize>() {
+    #[allow(clippy::no_effect)]
     Assert::<N, 0>::GREATER;
 }
 
@@ -23,7 +24,7 @@ impl<const L: usize, const R: usize> Assert<L, R> {
     pub const LESS_EQ: usize = R - L;
 
     /// Const assert hack
-    pub const NOT_EQ: isize = 0 / (R as isize - L as isize);
+    // pub const NOT_EQ: isize = 0 / (R as isize - L as isize);
 
     /// Const assert hack
     pub const EQ: usize = (R - L) + (L - R);
