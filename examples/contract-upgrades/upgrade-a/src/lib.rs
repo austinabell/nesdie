@@ -10,12 +10,14 @@ use nesdie::{env, sys};
 pub fn upgrade() {
     //* Might want to assert a contract owner, otherwise anyone can upgrade
 
-    // Put input bytes into register 0. This should be the wasm contract
-    unsafe { sys::input(0) };
-
     let current_account_id = env::current_account_id();
+
+    // Put input bytes into register 1. This should be the wasm contract
+    unsafe { sys::input(1) };
+
     let promise_id = env::promise_batch_create(current_account_id.as_str());
-    unsafe { sys::promise_batch_action_deploy_contract(promise_id.0, u64::MAX as _, 0) };
+    unsafe { sys::promise_batch_action_deploy_contract(promise_id.0, u64::MAX as _, 1) };
+    
     let attached_gas = env::prepaid_gas() - env::used_gas() - GAS_FOR_MIGRATE_CALL;
     unsafe {
         sys::promise_batch_action_function_call(
