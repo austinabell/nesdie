@@ -16,7 +16,7 @@
 /// Higher level environment functions which act as a safe wrapper around [`sys`].
 pub mod env;
 /// Host functions available to a NEAR contract through the runtime the contract is running inside.
-pub mod sys;
+pub use near_sys as sys;
 
 #[cfg(not(target_arch = "wasm32"))]
 /// Mock utilities used for testing and overriding the syscall interface for contracts.
