@@ -27,6 +27,6 @@ docker start build_$NAME
 
 # Following two lines a workaround because docker image is setup for stable
 docker exec build_$NAME rustup toolchain install nightly-2021-08-27
-docker exec build_$NAME rustup target add wasm32-unknown-unknown --toolchain nightly
+docker exec build_$NAME rustup target add wasm32-unknown-unknown --toolchain nightly-2021-08-27
 
 docker exec build_$NAME /bin/bash -c "./build.sh"

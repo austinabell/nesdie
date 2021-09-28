@@ -13,12 +13,7 @@ nesdie-collections = { path = "../../collections", features = ["legacy"] }
 borsh = { version = "0.9", default-features = false }
 bs58 = { version = "0.4", default-features = false, features = ["alloc"] }
 base64 = { version = "0.13", default-features = false, features = ["alloc"] }
-
-[target.'cfg(target_arch = "wasm32")'.dependencies]
-miniserde = { git = "https://github.com/austinabell/miniserde", rev = "07e651132043b0f1442ef315af44feaac102546f", default-features = false }
-
-[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-miniserde = { git = "https://github.com/austinabell/miniserde", rev = "07e651132043b0f1442ef315af44feaac102546f", default-features = false }
+miniserde = { version = "0.1.15", default-features = false }
 
 [profile.release]
 codegen-units = 1
