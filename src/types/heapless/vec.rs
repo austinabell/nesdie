@@ -1079,7 +1079,7 @@ mod tests {
 
         v.resize(0, 0).unwrap();
         v.resize(4, 0).unwrap();
-        v.resize(5, 0).err().expect("full");
+        v.resize(5, 0).expect_err("full");
     }
 
     #[test]

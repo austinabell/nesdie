@@ -2,7 +2,7 @@
 fn check_example_size(example: &str) -> usize {
     let status = std::process::Command::new("cargo")
         .env("RUSTFLAGS", "-C link-arg=-s")
-        .args(&[
+        .args([
             "build",
             "--release",
             "--target",
@@ -19,7 +19,7 @@ fn check_example_size(example: &str) -> usize {
     let wasm = std::fs::read(format!(
         "./examples/{}/target/wasm32-unknown-unknown/release/{}.wasm",
         example,
-        example.replace("-", "_")
+        example.replace('-', "_")
     ))
     .unwrap();
 
