@@ -30,8 +30,7 @@ fn check_example_size(example: &str) -> usize {
 fn proxy_code_size_check() {
     let size = check_example_size("proxy");
 
-    // 3600
-    assert_eq!(size, 11);
+    // 3535
     assert!(size < 3600);
 }
 
@@ -48,7 +47,6 @@ fn raw_contract_code_size_check() {
 fn fungible_token_code_size_check() {
     let size = check_example_size("smol_ft");
 
-    // 1500
-    assert_eq!(size, 11);
+    // 1416
     assert!(size < 1500);
 }
