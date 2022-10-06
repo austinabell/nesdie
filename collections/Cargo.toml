@@ -1,10 +1,14 @@
 [package]
 name = "nesdie-store"
-version = "0.1.0"
+version = "0.2.0"
+authors = ["Austin Abell <austinabell8@gmail.com>"]
+license = "MIT OR Apache-2.0"
+description = "storage collection types for nesdie"
+repository = "https://github.com/austinabell/nesdie"
 edition = "2018"
 
 [dependencies]
-nesdie = { version = "0.1", path = "../" }
+nesdie = { version = "0.2", path = "../" }
 borsh = { version = "0.9", default-features = false }
 
 [dev-dependencies]
