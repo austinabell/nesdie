@@ -8,11 +8,3 @@ crate-type = ["cdylib"]
 
 [dependencies]
 nesdie = { path = "../../../" }
-
-[profile.release]
-codegen-units = 1
-# Tell `rustc` to optimize for small code size.
-opt-level = "z"
-lto = true
-debug = false
-panic = "abort"
