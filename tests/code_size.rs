@@ -27,6 +27,7 @@ fn check_example_size(example: &str) -> usize {
 }
 
 #[test]
+#[ignore = "proxy can't be compiled on stable (alloc error handler)"]
 fn proxy_code_size_check() {
     let size = check_example_size("proxy");
 
