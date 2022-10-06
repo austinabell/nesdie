@@ -5,9 +5,9 @@ use core::mem::size_of;
 /// Register used internally for atomic operations. This register is safe to use by the user,
 /// since it only needs to be untouched while methods of `Environment` execute, which is guaranteed
 /// guest code is not parallel.
-const ATOMIC_OP_REGISTER: u64 = 0;
+const ATOMIC_OP_REGISTER: u64 = core::u64::MAX - 1;
 /// Register used to record evicted values from the storage.
-const EVICTED_REGISTER: u64 = core::u64::MAX - 1;
+const EVICTED_REGISTER: u64 = core::u64::MAX - 2;
 
 /// Key used to store the state of the contract.
 const STATE_KEY: &[u8] = b"STATE";
@@ -16,7 +16,7 @@ const STATE_KEY: &[u8] = b"STATE";
 macro_rules! try_method_into_register {
     ( $method:ident, $v:expr ) => {{
         unsafe { sys::$method(ATOMIC_OP_REGISTER) };
-        read_register(ATOMIC_OP_REGISTER, $v).unwrap_or_else(|_| sys_panic())
+        read_register(ATOMIC_OP_REGISTER, $v).unwrap_or_else(|_| abort())
     }};
 }
 
@@ -30,8 +30,18 @@ macro_rules! method_into_register {
 /// Index for a batch promise from within the runtime. Used to combine promises within a contract.
 pub struct PromiseIndex(pub u64);
 
-fn sys_panic() -> ! {
-    unsafe { sys::panic() }
+/// Aborts the current contract execution without a custom message.
+/// To include a message, use [`panic_str`].
+pub fn abort() -> ! {
+    // Use wasm32 unreachable call to avoid including the `panic` external function in Wasm.
+    #[cfg(target_arch = "wasm32")]
+    {
+        core::arch::wasm32::unreachable()
+    }
+    #[cfg(not(target_arch = "wasm32"))]
+    unsafe {
+        sys::panic()
+    }
 }
 
 /// Reads the content of the `register_id`. If register is not used or the buffer is not large
@@ -65,7 +75,7 @@ pub fn register_len(register_id: u64) -> Option<u64> {
 pub fn current_account_id() -> AccountId {
     let mut a = Vec::<u8, 64>::new();
     // Resize buffer to max length before reading bytes into it.
-    a.resize(64, 0).unwrap_or_else(|_| sys_panic());
+    a.resize(64, 0).unwrap_or_else(|_| abort());
     let len = method_into_register!(current_account_id, a.as_mut());
     // Update length for size written
     unsafe {
@@ -144,7 +154,7 @@ pub fn sha256(value: &[u8]) -> [u8; 32] {
     unsafe { sys::sha256(value.len() as _, value.as_ptr() as _, ATOMIC_OP_REGISTER) };
     let mut hash = [0u8; 32];
 
-    read_register(ATOMIC_OP_REGISTER, &mut hash).unwrap_or_else(|_| sys_panic());
+    read_register(ATOMIC_OP_REGISTER, &mut hash).unwrap_or_else(|_| abort());
     hash
 }
 
@@ -153,7 +163,7 @@ pub fn keccak256(value: &[u8]) -> [u8; 32] {
     unsafe { sys::keccak256(value.len() as _, value.as_ptr() as _, ATOMIC_OP_REGISTER) };
     let mut hash = [0u8; 32];
 
-    read_register(ATOMIC_OP_REGISTER, &mut hash).unwrap_or_else(|_| sys_panic());
+    read_register(ATOMIC_OP_REGISTER, &mut hash).unwrap_or_else(|_| abort());
     hash
 }
 
@@ -162,7 +172,7 @@ pub fn keccak512(value: &[u8]) -> [u8; 64] {
     unsafe { sys::keccak512(value.len() as _, value.as_ptr() as _, ATOMIC_OP_REGISTER) };
     let mut hash = [0u8; 64];
 
-    read_register(ATOMIC_OP_REGISTER, &mut hash).unwrap_or_else(|_| sys_panic());
+    read_register(ATOMIC_OP_REGISTER, &mut hash).unwrap_or_else(|_| abort());
     hash
 }
 
@@ -212,6 +222,7 @@ pub fn log_str(message: &str) {
 // ###############
 // # Storage API #
 // ###############
+
 /// Writes key-value into storage.
 /// If another key-value existed in the storage with the same key it returns `true`, otherwise `false`.
 pub fn storage_write(key: &[u8], value: &[u8]) -> bool {
@@ -226,15 +237,15 @@ pub fn storage_write(key: &[u8], value: &[u8]) -> bool {
     } {
         0 => false,
         1 => true,
-        _ => sys_panic(),
+        _ => abort(),
     }
 }
 /// Reads the value stored under the given key.
 pub fn storage_read(key: &[u8], buf: &mut [u8]) -> Option<usize> {
     match unsafe { sys::storage_read(key.len() as _, key.as_ptr() as _, ATOMIC_OP_REGISTER) } {
         0 => None,
-        1 => Some(read_register(ATOMIC_OP_REGISTER, buf).unwrap_or_else(|_| sys_panic())),
-        _ => sys_panic(),
+        1 => Some(read_register(ATOMIC_OP_REGISTER, buf).unwrap_or_else(|_| abort())),
+        _ => abort(),
     }
 }
 /// Removes the value stored under the given key.
@@ -243,7 +254,7 @@ pub fn storage_remove(key: &[u8]) -> bool {
     match unsafe { sys::storage_remove(key.len() as _, key.as_ptr() as _, EVICTED_REGISTER) } {
         0 => false,
         1 => true,
-        _ => sys_panic(),
+        _ => abort(),
     }
 }
 /// Reads the most recent value that was evicted with `storage_write` or `storage_remove` command.
@@ -255,7 +266,7 @@ pub fn storage_has_key(key: &[u8]) -> bool {
     match unsafe { sys::storage_has_key(key.len() as _, key.as_ptr() as _) } {
         0 => false,
         1 => true,
-        _ => sys_panic(),
+        _ => abort(),
     }
 }
 

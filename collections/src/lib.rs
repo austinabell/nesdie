@@ -2,15 +2,11 @@
 
 mod utils;
 
-/// A growable Vector with elements stored on the trie.
-pub mod vec;
+/// Storage key hash function types and trait to override map hash functions.
+pub mod key;
+mod kvstore;
+pub use kvstore::KvStore;
 
-pub use vec::Vector;
-
-#[cfg(feature = "legacy")]
-pub mod legacy_unordered_map;
-
-#[macro_use]
 extern crate alloc;
 
 mod lib {

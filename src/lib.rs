@@ -33,7 +33,7 @@ static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 #[cfg(all(not(feature = "std"), feature = "oom-handler", target_arch = "wasm32"))]
 #[alloc_error_handler]
 fn oom(_: core::alloc::Layout) -> ! {
-    unsafe { core::arch::wasm32::unreachable() }
+    core::arch::wasm32::unreachable()
 }
 
 // Update panic handler in wasm32 environments
@@ -48,6 +48,6 @@ fn panic(info: &core::panic::PanicInfo) -> ! {
             env::panic_str("unexpected panic occurred");
         }
     } else {
-        unsafe { core::arch::wasm32::unreachable() }
+        core::arch::wasm32::unreachable()
     }
 }

@@ -1,5 +1,5 @@
 [package]
-name = "nesdie-collections"
+name = "nesdie-store"
 version = "0.1.0"
 edition = "2018"
 
@@ -10,6 +10,3 @@ borsh = { version = "0.9", default-features = false }
 [dev-dependencies]
 rand = "0.7.2"
 rand_xorshift = "0.2"
-
-[features]
-legacy = []

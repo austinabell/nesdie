@@ -27,12 +27,12 @@ fn check_example_size(example: &str) -> usize {
 }
 
 #[test]
-#[ignore = "proxy can't be compiled on stable (alloc error handler)"]
 fn proxy_code_size_check() {
     let size = check_example_size("proxy");
 
-    // 3078
-    assert!(size < 3200);
+    // 3600
+    assert_eq!(size, 11);
+    assert!(size < 3600);
 }
 
 #[test]
@@ -45,10 +45,10 @@ fn raw_contract_code_size_check() {
 }
 
 #[test]
-#[ignore = "u64::MAX not stabilized with CI msrv"]
 fn fungible_token_code_size_check() {
     let size = check_example_size("smol_ft");
 
-    // 1270
-    assert!(size < 1350);
+    // 1500
+    assert_eq!(size, 11);
+    assert!(size < 1500);
 }
