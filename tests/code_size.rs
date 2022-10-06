@@ -45,6 +45,7 @@ fn raw_contract_code_size_check() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn fungible_token_code_size_check() {
     let size = check_example_size("smol_ft");
 
