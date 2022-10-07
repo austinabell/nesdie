@@ -1,3 +1,6 @@
+// NOTE: heapless currently needs to be vendored since std is being pulled
+// in through `heapless/hash32/byteorder`. Also, they don't have a way to
+// unsafely construct a String from Vec without requiring a copy (optimization).
 mod heapless;
 pub(crate) use self::heapless::Vec;
 
