@@ -57,9 +57,6 @@ impl<T, const N: usize> Vec<T, N> {
     /// ```
     /// `Vec` `const` constructor; wrap the returned value in [`Vec`](../struct.Vec.html)
     pub const fn new() -> Self {
-        // Const assert N >= 0
-        super::greater_than_eq_0::<N>();
-
         Self {
             len: 0,
             buffer: Self::INIT,
@@ -990,7 +987,7 @@ where
     A: PartialEq<B>,
 {
     fn eq(&self, other: &[B]) -> bool {
-        <[A]>::eq(self, &other[..])
+        <[A]>::eq(self, other)
     }
 }
 
@@ -1000,7 +997,7 @@ where
     A: PartialEq<B>,
 {
     fn eq(&self, other: &Vec<A, N>) -> bool {
-        <[A]>::eq(other, &self[..])
+        <[A]>::eq(other, self)
     }
 }
 
@@ -1296,8 +1293,8 @@ mod tests {
         assert_eq!(xs, array);
         assert_eq!(array, xs);
 
-        assert_eq!(xs, array.as_slice());
-        assert_eq!(array.as_slice(), xs);
+        assert_eq!(xs, &array);
+        assert_eq!(&array, xs);
 
         assert_eq!(xs, &array);
         assert_eq!(&array, xs);
@@ -1448,7 +1445,7 @@ mod tests {
 
         v.resize(0, 0).unwrap();
         v.resize(4, 0).unwrap();
-        v.resize(5, 0).err().expect("full");
+        v.resize(5, 0).expect_err("full");
     }
 
     #[test]

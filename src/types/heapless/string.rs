@@ -44,7 +44,7 @@ impl<const N: usize> String<N> {
     /// let b = s.into_bytes();
     /// assert!(b.len() == 2);
     ///
-    /// assert_eq!(&['a' as u8, 'b' as u8], &b[..]);
+    /// assert_eq!(&[b'a', b'b'], &b[..]);
     /// ```
     #[inline]
     pub fn into_bytes(self) -> Vec<u8, N> {
@@ -398,6 +398,7 @@ impl<const N1: usize, const N2: usize> PartialEq<String<N2>> for String<N1> {
         str::eq(&**self, &**rhs)
     }
 
+    #[allow(clippy::partialeq_ne_impl)]
     fn ne(&self, rhs: &String<N2>) -> bool {
         str::ne(&**self, &**rhs)
     }
@@ -407,11 +408,12 @@ impl<const N1: usize, const N2: usize> PartialEq<String<N2>> for String<N1> {
 impl<const N: usize> PartialEq<str> for String<N> {
     #[inline]
     fn eq(&self, other: &str) -> bool {
-        str::eq(&self[..], &other[..])
+        str::eq(self, other)
     }
     #[inline]
+    #[allow(clippy::partialeq_ne_impl)]
     fn ne(&self, other: &str) -> bool {
-        str::ne(&self[..], &other[..])
+        str::ne(self, other)
     }
 }
 
@@ -419,11 +421,12 @@ impl<const N: usize> PartialEq<str> for String<N> {
 impl<const N: usize> PartialEq<&str> for String<N> {
     #[inline]
     fn eq(&self, other: &&str) -> bool {
-        str::eq(&self[..], &other[..])
+        str::eq(self, &other[..])
     }
     #[inline]
+    #[allow(clippy::partialeq_ne_impl)]
     fn ne(&self, other: &&str) -> bool {
-        str::ne(&self[..], &other[..])
+        str::ne(self, &other[..])
     }
 }
 
@@ -431,11 +434,12 @@ impl<const N: usize> PartialEq<&str> for String<N> {
 impl<const N: usize> PartialEq<String<N>> for str {
     #[inline]
     fn eq(&self, other: &String<N>) -> bool {
-        str::eq(&self[..], &other[..])
+        str::eq(self, &other[..])
     }
     #[inline]
+    #[allow(clippy::partialeq_ne_impl)]
     fn ne(&self, other: &String<N>) -> bool {
-        str::ne(&self[..], &other[..])
+        str::ne(self, &other[..])
     }
 }
 
@@ -443,11 +447,12 @@ impl<const N: usize> PartialEq<String<N>> for str {
 impl<const N: usize> PartialEq<String<N>> for &str {
     #[inline]
     fn eq(&self, other: &String<N>) -> bool {
-        str::eq(&self[..], &other[..])
+        str::eq(self, other)
     }
     #[inline]
+    #[allow(clippy::partialeq_ne_impl)]
     fn ne(&self, other: &String<N>) -> bool {
-        str::ne(&self[..], &other[..])
+        str::ne(self, other)
     }
 }
 
@@ -568,8 +573,7 @@ mod tests {
         assert!(s.len() == 3);
         assert_eq!(s, "123");
 
-        let e: () = String::<2>::from_str("123").unwrap_err();
-        assert_eq!(e, ());
+        String::<2>::from_str("123").unwrap_err();
     }
 
     #[test]
@@ -594,7 +598,7 @@ mod tests {
 
     #[test]
     fn from_num() {
-        let v: String<20> = String::from(18446744073709551615 as u64);
+        let v: String<20> = String::from(18446744073709551615u64);
         assert_eq!(v, "18446744073709551615");
     }
 
@@ -603,7 +607,7 @@ mod tests {
         let s: String<4> = String::from("ab");
         let b: Vec<u8, 4> = s.into_bytes();
         assert_eq!(b.len(), 2);
-        assert_eq!(&['a' as u8, 'b' as u8], &b[..]);
+        assert_eq!(&[b'a', b'b'], &b[..]);
     }
 
     #[test]
@@ -679,9 +683,8 @@ mod tests {
             Some(c) => {
                 assert_eq!(s.len(), 1);
                 assert_eq!(c, '\u{0301}'); // accute accent of e
-                ()
             }
-            None => assert!(false),
+            None => panic!(),
         };
     }
 
