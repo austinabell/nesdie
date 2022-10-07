@@ -1166,7 +1166,7 @@ mod tests {
     macro_rules! droppable {
         () => {
             static COUNT: core::sync::atomic::AtomicI32 = core::sync::atomic::AtomicI32::new(0);
-    
+
             #[derive(Eq, Ord, PartialEq, PartialOrd)]
             struct Droppable(i32);
             impl Droppable {
@@ -1174,7 +1174,7 @@ mod tests {
                     COUNT.fetch_add(1, core::sync::atomic::Ordering::Relaxed);
                     Droppable(Self::count())
                 }
-    
+
                 fn count() -> i32 {
                     COUNT.load(core::sync::atomic::Ordering::Relaxed)
                 }
@@ -1186,7 +1186,6 @@ mod tests {
             }
         };
     }
-    
 
     #[test]
     fn static_new() {
