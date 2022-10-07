@@ -48,12 +48,12 @@ jobs:
           target: wasm32-unknown-unknown
       - run: cd examples && ./build_all.sh
 
-  # miri:
-  #   name: Miri
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v2
-  #     - uses: dtolnay/rust-toolchain@nightly
-  #       with:
-  #         components: miri
-  #     - run: cargo miri test
+  miri:
+    name: Miri
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: miri
+      - run: cargo miri test

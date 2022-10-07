@@ -16,6 +16,12 @@ pub(crate) const fn greater_than_0<const N: usize>() {
 }
 
 #[allow(dead_code)]
+#[allow(path_statements)]
+pub(crate) const fn greater_than_eq_0<const N: usize>() {
+    Assert::<N, 0>::GREATER_EQ;
+}
+
+#[allow(dead_code)]
 impl<const L: usize, const R: usize> Assert<L, R> {
     /// Const assert hack
     pub const GREATER_EQ: usize = L - R;

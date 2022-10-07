@@ -1,4 +1,4 @@
-use core::{cmp::Ordering, fmt, fmt::Write, hash, ops, str};
+use core::{cmp::Ordering, fmt, fmt::Write, hash, iter, ops, str};
 
 use super::vec::Vec;
 
@@ -8,14 +8,13 @@ pub struct String<const N: usize> {
 }
 
 impl<const N: usize> String<N> {
-    /// Constructs a new, empty `String` with a fixed capacity of `N`
+    /// Constructs a new, empty `String` with a fixed capacity of `N` bytes
     ///
     /// # Examples
     ///
     /// Basic usage:
     ///
     /// ```ignore
-    ///
     /// // allocate the string on the stack
     /// let mut s: String<4> = String::new();
     ///
@@ -299,6 +298,36 @@ impl<const N: usize> str::FromStr for String<N> {
     }
 }
 
+impl<const N: usize> iter::FromIterator<char> for String<N> {
+    fn from_iter<T: IntoIterator<Item = char>>(iter: T) -> Self {
+        let mut new = String::new();
+        for c in iter {
+            new.push(c).unwrap();
+        }
+        new
+    }
+}
+
+impl<'a, const N: usize> iter::FromIterator<&'a char> for String<N> {
+    fn from_iter<T: IntoIterator<Item = &'a char>>(iter: T) -> Self {
+        let mut new = String::new();
+        for c in iter {
+            new.push(*c).unwrap();
+        }
+        new
+    }
+}
+
+impl<'a, const N: usize> iter::FromIterator<&'a str> for String<N> {
+    fn from_iter<T: IntoIterator<Item = &'a str>>(iter: T) -> Self {
+        let mut new = String::new();
+        for c in iter {
+            new.push_str(c).unwrap();
+        }
+        new
+    }
+}
+
 impl<const N: usize> Clone for String<N> {
     fn clone(&self) -> Self {
         Self {
@@ -368,13 +397,21 @@ impl<const N1: usize, const N2: usize> PartialEq<String<N2>> for String<N1> {
     fn eq(&self, rhs: &String<N2>) -> bool {
         str::eq(&**self, &**rhs)
     }
+
+    fn ne(&self, rhs: &String<N2>) -> bool {
+        str::ne(&**self, &**rhs)
+    }
 }
 
 // String<N> == str
 impl<const N: usize> PartialEq<str> for String<N> {
     #[inline]
     fn eq(&self, other: &str) -> bool {
-        str::eq(&self[..], other)
+        str::eq(&self[..], &other[..])
+    }
+    #[inline]
+    fn ne(&self, other: &str) -> bool {
+        str::ne(&self[..], &other[..])
     }
 }
 
@@ -384,13 +421,21 @@ impl<const N: usize> PartialEq<&str> for String<N> {
     fn eq(&self, other: &&str) -> bool {
         str::eq(&self[..], &other[..])
     }
+    #[inline]
+    fn ne(&self, other: &&str) -> bool {
+        str::ne(&self[..], &other[..])
+    }
 }
 
 // str == String<N>
 impl<const N: usize> PartialEq<String<N>> for str {
     #[inline]
     fn eq(&self, other: &String<N>) -> bool {
-        str::eq(self, &other[..])
+        str::eq(&self[..], &other[..])
+    }
+    #[inline]
+    fn ne(&self, other: &String<N>) -> bool {
+        str::ne(&self[..], &other[..])
     }
 }
 
@@ -399,6 +444,10 @@ impl<const N: usize> PartialEq<String<N>> for &str {
     #[inline]
     fn eq(&self, other: &String<N>) -> bool {
         str::eq(&self[..], &other[..])
+    }
+    #[inline]
+    fn ne(&self, other: &String<N>) -> bool {
+        str::ne(&self[..], &other[..])
     }
 }
 
@@ -519,7 +568,22 @@ mod tests {
         assert!(s.len() == 3);
         assert_eq!(s, "123");
 
-        String::<2>::from_str("123").unwrap_err();
+        let e: () = String::<2>::from_str("123").unwrap_err();
+        assert_eq!(e, ());
+    }
+
+    #[test]
+    fn from_iter() {
+        let mut v: Vec<char, 5> = Vec::new();
+        v.push('h').unwrap();
+        v.push('e').unwrap();
+        v.push('l').unwrap();
+        v.push('l').unwrap();
+        v.push('o').unwrap();
+        let string1: String<5> = v.iter().collect(); //&char
+        let string2: String<5> = "hello".chars().collect(); //char
+        assert_eq!(string1, "hello");
+        assert_eq!(string2, "hello");
     }
 
     #[test]
@@ -530,7 +594,7 @@ mod tests {
 
     #[test]
     fn from_num() {
-        let v: String<20> = String::from(18446744073709551615_u64);
+        let v: String<20> = String::from(18446744073709551615 as u64);
         assert_eq!(v, "18446744073709551615");
     }
 
@@ -539,7 +603,7 @@ mod tests {
         let s: String<4> = String::from("ab");
         let b: Vec<u8, 4> = s.into_bytes();
         assert_eq!(b.len(), 2);
-        assert_eq!(&[b'a', b'b'], &b[..]);
+        assert_eq!(&['a' as u8, 'b' as u8], &b[..]);
     }
 
     #[test]
@@ -615,8 +679,9 @@ mod tests {
             Some(c) => {
                 assert_eq!(s.len(), 1);
                 assert_eq!(c, '\u{0301}'); // accute accent of e
+                ()
             }
-            None => panic!(),
+            None => assert!(false),
         };
     }
 
