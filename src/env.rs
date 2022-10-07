@@ -1,6 +1,6 @@
 use crate::types::Vec;
 use crate::{sys, AccountId, Balance, Gas};
-use core::mem::size_of;
+use core::mem::{size_of, MaybeUninit};
 
 /// Register used internally for atomic operations. This register is safe to use by the user,
 /// since it only needs to be untouched while methods of `Environment` execute, which is guaranteed
@@ -54,6 +54,24 @@ pub fn read_register(register_id: u64, buf: &mut [u8]) -> Result<usize, ()> {
     }
     unsafe { sys::read_register(register_id, buf.as_ptr() as _) };
     Ok(len)
+}
+
+pub(crate) unsafe fn read_register_fixed_20(register_id: u64) -> [u8; 20] {
+    let mut hash = [MaybeUninit::<u8>::uninit(); 20];
+    sys::read_register(register_id, hash.as_mut_ptr() as _);
+    core::mem::transmute(hash)
+}
+
+pub(crate) unsafe fn read_register_fixed_32(register_id: u64) -> [u8; 32] {
+    let mut hash = [MaybeUninit::<u8>::uninit(); 32];
+    sys::read_register(register_id, hash.as_mut_ptr() as _);
+    core::mem::transmute(hash)
+}
+
+pub(crate) unsafe fn read_register_fixed_64(register_id: u64) -> [u8; 64] {
+    let mut hash = [MaybeUninit::<u8>::uninit(); 64];
+    sys::read_register(register_id, hash.as_mut_ptr() as _);
+    core::mem::transmute(hash)
 }
 
 /// Returns the size of the register. If register is not used returns `None`.
@@ -144,36 +162,52 @@ pub fn used_gas() -> Gas {
 // ############
 // # Math API #
 // ############
-// /// Get random seed from the register.
-// pub fn random_seed() -> Vec<u8> {
-//     method_into_register!(random_seed)
-// }
+/// Returns the random seed from the current block. This 32 byte hash is based on the VRF value from
+/// the block. This value is not modified in any way each time this function is called within the
+/// same method/block.
+pub fn random_seed() -> [u8; 32] {
+    //* SAFETY: random_seed syscall will always generate 32 bytes inside of the atomic op register
+    //*         so the read will have a sufficient buffer of 32, and can transmute from uninit
+    //*         because all bytes are filled. This assumes a valid random_seed implementation.
+    unsafe {
+        sys::random_seed(ATOMIC_OP_REGISTER);
+        read_register_fixed_32(ATOMIC_OP_REGISTER)
+    }
+}
 
 /// Hashes the random sequence of bytes using sha256.
 pub fn sha256(value: &[u8]) -> [u8; 32] {
-    unsafe { sys::sha256(value.len() as _, value.as_ptr() as _, ATOMIC_OP_REGISTER) };
-    let mut hash = [0u8; 32];
-
-    read_register(ATOMIC_OP_REGISTER, &mut hash).unwrap_or_else(|_| abort());
-    hash
+    unsafe {
+        sys::sha256(value.len() as _, value.as_ptr() as _, ATOMIC_OP_REGISTER);
+        read_register_fixed_32(ATOMIC_OP_REGISTER)
+    }
 }
 
 /// Hashes the random sequence of bytes using keccak256.
 pub fn keccak256(value: &[u8]) -> [u8; 32] {
-    unsafe { sys::keccak256(value.len() as _, value.as_ptr() as _, ATOMIC_OP_REGISTER) };
-    let mut hash = [0u8; 32];
-
-    read_register(ATOMIC_OP_REGISTER, &mut hash).unwrap_or_else(|_| abort());
-    hash
+    unsafe {
+        sys::keccak256(value.len() as _, value.as_ptr() as _, ATOMIC_OP_REGISTER);
+        read_register_fixed_32(ATOMIC_OP_REGISTER)
+    }
 }
 
 /// Hashes the random sequence of bytes using keccak512.
 pub fn keccak512(value: &[u8]) -> [u8; 64] {
-    unsafe { sys::keccak512(value.len() as _, value.as_ptr() as _, ATOMIC_OP_REGISTER) };
-    let mut hash = [0u8; 64];
+    unsafe {
+        sys::keccak512(value.len() as _, value.as_ptr() as _, ATOMIC_OP_REGISTER);
+        read_register_fixed_64(ATOMIC_OP_REGISTER)
+    }
+}
 
-    read_register(ATOMIC_OP_REGISTER, &mut hash).unwrap_or_else(|_| abort());
-    hash
+/// Hashes the bytes using the RIPEMD-160 hash function. This returns a 20 byte hash.
+pub fn ripemd160(value: &[u8]) -> [u8; 20] {
+    //* SAFETY: ripemd160 syscall will always generate 20 bytes inside of the atomic op register
+    //*         so the read will have a sufficient buffer of 20, and can transmute from uninit
+    //*         because all bytes are filled. This assumes a valid ripemd160 implementation.
+    unsafe {
+        sys::ripemd160(value.len() as _, value.as_ptr() as _, ATOMIC_OP_REGISTER);
+        read_register_fixed_20(ATOMIC_OP_REGISTER)
+    }
 }
 
 // ###############
