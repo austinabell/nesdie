@@ -251,7 +251,7 @@ impl<T, const N: usize> Vec<T, N> {
         debug_assert!(!self.is_empty());
 
         self.len -= 1;
-        (self.buffer.get_unchecked_mut(self.len).as_ptr() as *const T).read()
+        (self.buffer.get_unchecked_mut(self.len).as_ptr()).read()
     }
 
     /// Appends an `item` to the back of the collection
@@ -920,9 +920,7 @@ impl<T, const N: usize> Iterator for IntoIter<T, N> {
     type Item = T;
     fn next(&mut self) -> Option<Self::Item> {
         if self.next < self.vec.len() {
-            let item = unsafe {
-                (self.vec.buffer.get_unchecked_mut(self.next).as_ptr() as *const T).read()
-            };
+            let item = unsafe { self.vec.buffer.get_unchecked_mut(self.next).as_ptr().read() };
             self.next += 1;
             Some(item)
         } else {

@@ -46,7 +46,7 @@ pub fn abort() -> ! {
 
 /// Reads the content of the `register_id`. If register is not used or the buffer is not large
 /// enough, an error will be returned.
-#[allow(clippy::result_unit_err)]
+#[allow(clippy::result_unit_err, clippy::needless_pass_by_ref_mut)]
 pub fn read_register(register_id: u64, buf: &mut [u8]) -> Result<usize, ()> {
     let len = register_len(register_id).ok_or(())? as usize;
     if buf.len() < len {

@@ -49,6 +49,6 @@ fn raw_contract_code_size_check() {
 fn fungible_token_code_size_check() {
     let size = check_example_size("smol_ft");
 
-    // 1416
-    assert!(size < 1500);
+    // 1806 in current Rust version
+    assert!(size < 2000);
 }

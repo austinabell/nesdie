@@ -237,7 +237,7 @@ impl<const N: usize> String<N> {
     /// assert_eq!(s.pop(), None);
     /// ```
     pub fn pop(&mut self) -> Option<char> {
-        let ch = self.chars().rev().next()?;
+        let ch = self.chars().next_back()?;
 
         // pop bytes that correspond to `ch`
         for _ in 0..ch.len_utf8() {
